@@ -22,10 +22,11 @@ const CONFLICT_TARGET: Record<string, string> = {
   weight_entries: 'client_uuid',
   foods: 'id',
   targets: 'id',
+  profile: 'user_id',
 }
 
 /** Local Dexie table that mirrors each synced server table (for incremental pulls). */
-const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'foods'] as const
+const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'foods', 'profile'] as const
 
 interface SyncState {
   online: boolean

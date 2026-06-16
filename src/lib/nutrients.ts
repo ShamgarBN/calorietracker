@@ -132,6 +132,16 @@ export function scaleNutrients(per100g: Nutrients, grams: number): Nutrients {
   return out
 }
 
+/** Seed micronutrient floors/ceilings from the reference defaults (excludes core macros). */
+export function defaultMicroLimits(): Partial<Record<NutrientKey, { kind: TargetKind; value: number }>> {
+  const out: Partial<Record<NutrientKey, { kind: TargetKind; value: number }>> = {}
+  for (const n of NUTRIENTS) {
+    if (n.key === 'protein') continue // protein is a primary macro target
+    if (n.targetKind !== 'none' && n.target != null) out[n.key] = { kind: n.targetKind, value: n.target }
+  }
+  return out
+}
+
 /** Sum a list of nutrient maps (e.g. all items logged on a day). */
 export function sumNutrients(list: Nutrients[]): Nutrients {
   const out: Nutrients = {}

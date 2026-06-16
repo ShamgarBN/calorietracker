@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { syncNow } from '@/lib/sync'
-import { ensureProfile } from '@/data/profile'
 
-function onSignedIn(session: Session) {
-  void ensureProfile(session.user.id, session.user.email).then(() => syncNow())
+function onSignedIn(_session: Session) {
+  // Pull server state (incl. profile/targets) into the local cache. The profile
+  // row is created lazily when the user first saves goals or changes a preference.
+  void syncNow()
 }
 
 interface AuthState {

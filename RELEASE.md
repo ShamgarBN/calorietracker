@@ -5,6 +5,27 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v0.3.0 — Phase 2: Targets & dashboard
+
+Goals turn the log into a dashboard: see progress vs. targets and trends over time.
+
+**Added**
+- **Goal setup** (Settings → Goals & targets): sex, age, height, activity, goal direction + weekly
+  rate. Computes daily calorie + macro targets via **Mifflin-St Jeor → TDEE → goal adjustment**
+  (7700 kcal/kg), with protein anchored to bodyweight (1.8 g/kg), fat at 25% of calories, carbs filling
+  the rest. Live preview as you type; height respects kg/lb (inches vs cm).
+- **Today dashboard:** calorie **progress ring** with remaining budget, plus **protein/carbs/fat bars**
+  vs target. Over-target turns warm-red. Prompts to set goals when none exist.
+- **Trends:** range toggle (14/30/90d), **logging streak**, **average intake**, **adherence %**, a
+  **calories-vs-target** bar chart (dashed target line), and the weight raw-vs-trend chart.
+- Dated **targets** history (so the adaptive engine can chart changes) and seeded micronutrient
+  floors/ceilings. Profile cached locally (Dexie v3) for offline goal reads.
+
+**Notes**
+- Targets are the static baseline; Phase 3's adaptive engine recalibrates them from real data.
+
+---
+
 ## v0.2.0 — Phase 1: Logging core
 
 The fast-logging foundation: search the combined food database, log at any serving, and

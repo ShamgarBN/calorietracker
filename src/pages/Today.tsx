@@ -1,16 +1,20 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Plus, Zap, Trash2 } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
 import { deleteEntry, dayTotals } from '@/data/log'
+import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
 import { usePrefs } from '@/lib/prefs'
 import { toKg, formatWeight } from '@/lib/units'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
 import { LogFoodSheet } from '@/components/LogFoodSheet'
 import { QuickAddSheet } from '@/components/QuickAddSheet'
-import type { LogEntry, MealSlot } from '@/types/db'
+import { ProgressRing, MacroBar } from '@/components/ProgressRing'
+import type { LogEntry, MealSlot, TargetRow } from '@/types/db'
+import type { Nutrients } from '@/lib/nutrients'
 
 export function Today() {
   const today = todayISO()
@@ -25,34 +29,11 @@ export function Today() {
     ).filter((e) => !e.deleted) ?? []
 
   const totals = dayTotals(entries)
+  const target = useLiveQuery(() => getCurrentTarget(today), [today])
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Today</h2>
-            <p className="text-3xl font-semibold tabular-nums">
-              {Math.round(totals.energy ?? 0)}
-              <span className="ml-1 text-base font-normal text-muted">kcal</span>
-            </p>
-          </div>
-          <button
-            onClick={() => setQuickSheet('snack')}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
-          >
-            <Zap size={14} /> Quick add
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <Macro label="Protein" value={totals.protein} tone="text-[var(--color-protein)]" />
-          <Macro label="Carbs" value={totals.carbs} tone="text-[var(--color-carbs)]" />
-          <Macro label="Fat" value={totals.fat} tone="text-[var(--color-fat)]" />
-        </div>
-        <p className="mt-3 text-center text-xs text-muted">
-          Targets &amp; progress rings arrive in Phase 2.
-        </p>
-      </section>
+      <DayDashboard totals={totals} target={target} onQuickAdd={() => setQuickSheet('snack')} />
 
       {MEAL_SLOTS.map((slot) => {
         const slotEntries = entries.filter((e) => e.meal_slot === slot.value)
@@ -104,12 +85,59 @@ export function Today() {
   )
 }
 
-function Macro({ label, value, tone }: { label: string; value?: number; tone: string }) {
+function DayDashboard({
+  totals,
+  target,
+  onQuickAdd,
+}: {
+  totals: Nutrients
+  target: TargetRow | undefined
+  onQuickAdd: () => void
+}) {
+  const eaten = Math.round(totals.energy ?? 0)
+
   return (
-    <div className="rounded-lg bg-[var(--color-bg)] py-2">
-      <div className={`text-lg font-semibold tabular-nums ${tone}`}>{Math.round(value ?? 0)}g</div>
-      <div className="text-xs text-muted">{label}</div>
-    </div>
+    <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Today</h2>
+        <button
+          onClick={onQuickAdd}
+          className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
+        >
+          <Zap size={14} /> Quick add
+        </button>
+      </div>
+
+      {target ? (
+        <>
+          <div className="flex items-center gap-4">
+            <ProgressRing value={eaten} target={target.energy}>
+              <span className="text-2xl font-semibold tabular-nums">{Math.max(0, target.energy - eaten)}</span>
+              <span className="text-[11px] text-muted">kcal left</span>
+            </ProgressRing>
+            <div className="flex-1 space-y-2.5">
+              <MacroBar label="Protein" value={totals.protein ?? 0} target={target.protein} color="var(--color-protein)" />
+              <MacroBar label="Carbs" value={totals.carbs ?? 0} target={target.carbs} color="var(--color-carbs)" />
+              <MacroBar label="Fat" value={totals.fat ?? 0} target={target.fat} color="var(--color-fat)" />
+            </div>
+          </div>
+          <p className="mt-3 text-center text-xs text-muted">
+            {eaten} eaten · {target.energy} target
+          </p>
+        </>
+      ) : (
+        <div className="text-center">
+          <p className="text-3xl font-semibold tabular-nums">{eaten}<span className="ml-1 text-base font-normal text-muted">kcal</span></p>
+          <Link
+            to="/settings"
+            className="mt-3 inline-block rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-medium text-black"
+          >
+            Set your goals →
+          </Link>
+          <p className="mt-2 text-xs text-muted">Add targets to see progress rings and remaining budget.</p>
+        </div>
+      )}
+    </section>
   )
 }
 

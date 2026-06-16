@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
+import { Target } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { storageEstimate } from '@/lib/storage'
 import { useSyncStore } from '@/lib/sync'
 import { usePrefs } from '@/lib/prefs'
 import type { WeightUnit } from '@/lib/units'
+import { GoalSetup } from '@/components/GoalSetup'
 
 export function Settings() {
   const { pending, lastSyncedAt } = useSyncStore()
   const { weightUnit, setWeightUnit } = usePrefs()
   const [email, setEmail] = useState<string | null>(null)
   const [storage, setStorage] = useState<string>('—')
+  const [goalsOpen, setGoalsOpen] = useState(false)
 
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null))
@@ -21,6 +24,18 @@ export function Settings() {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Settings</h2>
+
+      <button
+        onClick={() => setGoalsOpen(true)}
+        className="flex w-full items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Target size={16} className="text-[var(--color-brand)]" /> Goals &amp; targets
+        </span>
+        <span className="text-xs text-muted">Set up →</span>
+      </button>
+
+      <GoalSetup open={goalsOpen} onClose={() => setGoalsOpen(false)} />
 
       <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <div className="flex items-center justify-between">
