@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+
+/* ---- Design tokens (calm, modern, dark-first) -------------------------- */
+@theme {
+  --color-bg: #0b1120;
+  --color-surface: #0f172a;
+  --color-surface-2: #1e293b;
+  --color-border: #243049;
+  --color-text: #e2e8f0;
+  --color-muted: #94a3b8;
+  --color-brand: #34d399; /* emerald — "on target" */
+  --color-protein: #f472b6;
+  --color-carbs: #fbbf24;
+  --color-fat: #60a5fa;
+  --color-warn: #f87171;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  -webkit-font-smoothing: antialiased;
+  /* Respect the iPhone notch / home indicator in standalone mode */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+/* Prevent iOS rubber-band overscroll revealing browser chrome in standalone */
+html {
+  overscroll-behavior-y: none;
+}
+
+/* Inputs shouldn't zoom on focus in iOS Safari (needs >=16px font) */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}

@@ -1,0 +1,21 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Build artifacts (per global note: shippable bundles live at project root, gitignored)
+*.dmg
+
+# Supabase local
+supabase/.temp
+supabase/.branches
