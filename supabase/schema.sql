@@ -69,10 +69,14 @@ create table if not exists tracker.foods (
   nutrients        jsonb not null default '{}',
   servings         jsonb not null default '[]',
   default_serving  int not null default 0,
+  favorite         boolean not null default false,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+-- For projects created before `favorite` was added (idempotent):
+alter table tracker.foods add column if not exists favorite boolean not null default false;
 create index if not exists foods_user_idx on tracker.foods(user_id);
+create index if not exists foods_source_idx on tracker.foods(user_id, source, source_id);
 create index if not exists foods_barcode_idx on tracker.foods(user_id, barcode);
 create index if not exists foods_name_trgm_idx on tracker.foods using gin (name extensions.gin_trgm_ops);
 

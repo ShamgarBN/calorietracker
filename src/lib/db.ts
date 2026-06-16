@@ -27,6 +27,11 @@ class AppDB extends Dexie {
       outbox: '++id, client_uuid, table, queued_at',
       meta: 'key',
     })
+    // v2: dedupe foods by (source, source_id). (favorite is a boolean — not
+    // indexable in IndexedDB — so we filter it in memory; the table is small.)
+    this.version(2).stores({
+      foods: 'id, source, barcode, name, updated_at, [source+source_id]',
+    })
   }
 }
 

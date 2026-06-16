@@ -9,9 +9,10 @@ MacroFactor / Cronometer / MyFitnessPal / Eat This Much:
 - **Fused planner ↔ log** — one shared food database and one set of targets; planning pre-logs, logging updates the plan.
 - **Offline-first PWA** — installs to your iPhone home screen and runs in any desktop browser, syncing through Supabase.
 
-> **Status: Phase 0 (skeleton & infra).** Installable PWA, magic-link auth, offline sync outbox, and a
-> working weight-log round-trip are in place. Food logging, dashboard, adaptive engine, and planner land
-> in later phases — see [Roadmap](#roadmap).
+> **Status: Phase 1 (logging core).** Installable PWA, magic-link auth, offline sync outbox, fast food
+> logging (USDA + Open Food Facts search, recents/favorites, custom foods, quick-add by macros), and a
+> weight-log round-trip are in place. Dashboard, adaptive engine, and planner land in later phases — see
+> [Roadmap](#roadmap).
 
 ---
 
@@ -107,7 +108,26 @@ REST API every 3 days using the same two secrets. No extra setup needed beyond s
 > [UptimeRobot](https://uptimerobot.com) HTTP(s) monitor on
 > `https://YOUR-PROJECT.supabase.co/rest/v1/` (header `apikey: YOUR-ANON-KEY`) at a 3-day interval.
 
-### 7. Install on your iPhone
+### 7. Food search (Edge Function)
+Food search proxies USDA FoodData Central + Open Food Facts through a Supabase Edge Function
+([`supabase/functions/tracker-food-search`](supabase/functions/tracker-food-search)) so the USDA key
+stays server-side, CORS is avoided, and ranking/dedupe happen in one place.
+
+1. Get a free USDA key: **https://fdc.nal.usda.gov/api-key-signup.html** (instant).
+2. Store it as the function's secret (Dashboard → **Edge Functions → Secrets**, or via CLI):
+   ```bash
+   supabase secrets set USDA_API_KEY=YOUR_USDA_KEY --project-ref YOUR_PROJECT_REF
+   ```
+   > Note: on some setups `supabase secrets set` can't read the keychain token — if it errors with
+   > "Access token not provided," set the secret in the **dashboard** instead (it's reliable there).
+3. Deploy the function:
+   ```bash
+   supabase functions deploy tracker-food-search --project-ref YOUR_PROJECT_REF
+   ```
+Search degrades gracefully: with no USDA key it returns Open Food Facts results only. USDA serves clean
+generic/whole foods (ranked first); OFF serves branded/packaged products (and barcodes, Phase 4).
+
+### 8. Install on your iPhone
 Open the deployed URL in Safari → Share → **Add to Home Screen**. It launches full-screen like a native
 app. (Camera/barcode and Apple Health bridge come in Phases 4 and 3 respectively.)
 
@@ -129,7 +149,7 @@ scripts/      generate-icons.mjs
 
 ## Roadmap
 - **Phase 0 ✅** Skeleton, auth, offline sync outbox, deploy + keep-alive.
-- **Phase 1** Food search (USDA + OFF via Edge Function), Today logging, quick-add, recents/favorites.
+- **Phase 1 ✅** Food search (USDA + OFF via Edge Function), Today logging, quick-add, recents/favorites, custom foods.
 - **Phase 2** Goals + targets, dashboard rings, weight-trend chart, weekly/monthly trends.
 - **Phase 3** Adaptive TDEE engine + micronutrient report + Apple Health (Shortcuts) bridge.
 - **Phase 4** Saved meals, barcode scan, recipes, AI natural-language logging.

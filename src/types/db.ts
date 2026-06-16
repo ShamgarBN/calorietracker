@@ -51,6 +51,7 @@ export interface Food {
   nutrients: Nutrients
   servings: Serving[]
   default_serving: number // index into servings
+  favorite: boolean
   created_at: Timestamptz
   updated_at: Timestamptz
 }

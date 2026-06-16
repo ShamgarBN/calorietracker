@@ -19,3 +19,9 @@ export const supabase = createClient(
     },
   },
 )
+
+/** Current user's id, or 'local' when signed out (offline-first writes still work). */
+export async function currentUserId(): Promise<string> {
+  const { data } = await supabase.auth.getUser()
+  return data.user?.id ?? 'local'
+}
