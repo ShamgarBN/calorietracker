@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Star, Plus, Loader2, Utensils, ChefHat, Trash2 } from 'lucide-react'
+import { Search, Star, Plus, Loader2, Utensils, ChefHat, Trash2, ScanLine } from 'lucide-react'
 import { searchFoods } from '@/data/foodSource'
 import { saveFoodFromResult, getRecentFoods, getFavoriteFoods, toggleFavorite } from '@/data/foods'
 import { getMeals, deleteMeal } from '@/data/meals'
@@ -14,12 +14,14 @@ export function FoodSearch({
   onLogRecipe,
   onCreateRecipe,
   onCustom,
+  onScan,
 }: {
   onPick: (food: Food) => void
   onLogMeal: (meal: Meal) => void
   onLogRecipe: (recipe: Recipe) => void
   onCreateRecipe: () => void
   onCustom: () => void
+  onScan: () => void
 }) {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<FoodResult[]>([])
@@ -81,6 +83,13 @@ export function FoodSearch({
           <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-muted" />
         )}
       </div>
+
+      <button
+        onClick={onScan}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-sm"
+      >
+        <ScanLine size={16} className="text-[var(--color-brand)]" /> Scan a barcode
+      </button>
 
       <div className="flex gap-2">
         <button
