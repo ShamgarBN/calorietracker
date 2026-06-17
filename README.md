@@ -9,10 +9,12 @@ MacroFactor / Cronometer / MyFitnessPal / Eat This Much:
 - **Fused planner ↔ log** — one shared food database and one set of targets; planning pre-logs, logging updates the plan.
 - **Offline-first PWA** — installs to your iPhone home screen and runs in any desktop browser, syncing through Supabase.
 
-> **Status: Phase 5 (meal planner).** Everything through fast logging, plus the meal planner:
-> auto-generate a day to your calorie + macro targets, lock/swap meals, regenerate, pre-log the plan
-> to Today (planned items you confirm with "Ate it"), and a pantry-aware, aisle-sorted grocery list.
-> Only Phase 6 (export/import + polish) remains — see [Roadmap](#roadmap).
+> **Status: v1.0 — feature-complete.** All six build phases are done: offline-first logging
+> (search/barcode/quick-add/AI/saved meals/recipes), goals + adaptive TDEE engine, micronutrient
+> report, the fused meal planner (generate/swap/lock + pantry-aware grocery list), water/notes, and
+> full JSON/CSV export + import.
+>
+> **Live:** https://shamgarbn.github.io/calorietracker/ — installable to the iOS home screen.
 
 ---
 
@@ -164,6 +166,6 @@ scripts/      generate-icons.mjs
 - **Phase 3 ✅** Adaptive TDEE engine + micronutrient report. (Apple Health/Shortcuts bridge deferred — manual weigh-in is the default.)
 - **Phase 4 ✅** Saved meals, copy-yesterday, recipes, curated food library, barcode scan, AI natural-language logging.
 - **Phase 5 ✅** Meal planner: auto-generate to targets, lock/swap/regenerate, pre-log to today, pantry-aware aisle-sorted grocery list.
-- **Phase 6** Full CSV/JSON export + import, accessibility, polish.
+- **Phase 6 ✅** Full CSV/JSON export + import, water + notes, code-split bundle, GitHub Pages deploy.
 
 Full design rationale lives in the approved plan referenced during development.

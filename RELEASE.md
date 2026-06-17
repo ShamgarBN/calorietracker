@@ -5,6 +5,25 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.0.0 — Phase 6: Data ownership, QoL & ship
+
+Feature-complete v1, deployed to GitHub Pages.
+
+**Added**
+- **Full data export/import**: round-trippable JSON backup of everything + a CSV of your food log;
+  import a JSON backup back through the sync outbox (Settings → Your data).
+- **Water tracking** (+250/+500 ml, undo, daily goal) and **per-day notes** (autosave) on Today.
+- **Code-split bundle**: initial load 1041 kB → 645 kB (185 kB gzip); Recharts and the barcode scanner
+  load on demand.
+- **Live deploy** to GitHub Pages with the keep-alive Action; installable to the iOS home screen.
+
+**v1 Definition of Done — all met:** log by search/barcode/quick-add; goals + daily targets; adaptive
+engine recalibrates from ≥1 week of data; dashboard + weight-trend; micronutrient report; export +
+re-import; generate a plan to targets, swap, pre-log; pantry-aware aisle-sorted grocery list;
+installable + synced across devices; offline-capable; full setup README.
+
+---
+
 ## v0.6.0 — Phase 5: Meal planner
 
 The headline feature — and it's one system with the tracker, not a bolt-on.
