@@ -5,6 +5,30 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v0.5.0 — Phase 4: Fast logging
+
+Make logging effortless — the difference between a tracker you keep up and one you abandon.
+
+**Added**
+- **Saved meals**: bundle a meal slot into a one-tap reusable meal; log it from the add sheet.
+- **Copy yesterday**: pull a whole day's food forward; per-slot copy too.
+- **Recipes**: builder with inline ingredient search + editable grams, live per-serving macros computed
+  from the food DB, steps; log any number of servings (scales).
+- **Curated food library**: 80 clean staples (chicken, rice, eggs, oats, oils, common produce/dairy)
+  from USDA, surfaced instantly and ranked first — works offline. This fixes the "can't find grilled
+  chicken" gap. Regenerate with `npm run curated`.
+- **Barcode scanning**: camera (ZXing) → Open Food Facts product, with manual-entry fallback and
+  graceful permission handling (iOS PWA-safe).
+- **AI natural-language logging**: type "2 eggs and a cup of oats" → Anthropic (Haiku) parses it →
+  each item matched to the food DB → you review/adjust grams → log. Confirm-before-log; a cost guard
+  requires a real signed-in user so the paid endpoint can't be abused.
+
+**Setup**
+- AI logging needs the `tracker-parse-food` function deployed + an `ANTHROPIC_API_KEY` secret (README §7).
+- Re-run `schema.sql` (adds `meals.items` + `recipes.ingredients`).
+
+---
+
 ## v0.4.0 — Phase 3: Adaptive engine & micronutrients
 
 The tracker's headline: targets that recalibrate from your real data, plus micronutrient depth.

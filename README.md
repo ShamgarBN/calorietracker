@@ -9,10 +9,10 @@ MacroFactor / Cronometer / MyFitnessPal / Eat This Much:
 - **Fused planner ↔ log** — one shared food database and one set of targets; planning pre-logs, logging updates the plan.
 - **Offline-first PWA** — installs to your iPhone home screen and runs in any desktop browser, syncing through Supabase.
 
-> **Status: Phase 3 (adaptive engine & micros).** Everything from logging through goals, plus the
-> adaptive TDEE engine (weekly expenditure recalculated from your weight-trend + intake, with a
-> "why it changed" explanation and one-tap apply) and a Cronometer-style micronutrient report. The
-> meal planner lands in Phase 5 — see [Roadmap](#roadmap).
+> **Status: Phase 4 (fast logging).** Everything through the adaptive engine, plus saved meals,
+> copy-yesterday, recipes (auto macros), an 80-food curated library, barcode scanning, and AI
+> natural-language logging ("2 eggs and a cup of oats" → parsed → confirm → log). The meal planner
+> lands in Phase 5 — see [Roadmap](#roadmap).
 
 ---
 
@@ -125,7 +125,17 @@ stays server-side, CORS is avoided, and ranking/dedupe happen in one place.
    supabase functions deploy tracker-food-search --project-ref YOUR_PROJECT_REF
    ```
 Search degrades gracefully: with no USDA key it returns Open Food Facts results only. USDA serves clean
-generic/whole foods (ranked first); OFF serves branded/packaged products (and barcodes, Phase 4).
+generic/whole foods (ranked first); OFF serves branded/packaged products (and barcodes). An 80-food
+**curated library** (`npm run curated` → `src/data/curatedFoods.ts`) is bundled for instant, offline,
+top-ranked staples.
+
+**AI natural-language logging (optional):** deploy a second function and add an Anthropic key.
+```bash
+# Dashboard → Edge Functions → Secrets: ANTHROPIC_API_KEY = sk-ant-...
+supabase functions deploy tracker-parse-food --project-ref YOUR_PROJECT_REF
+```
+The function requires a real signed-in user (rejects the public key) so the paid LLM can't be abused.
+Uses Claude Haiku for cheap parsing; you confirm every parsed item before it's logged.
 
 ### 8. Install on your iPhone
 Open the deployed URL in Safari → Share → **Add to Home Screen**. It launches full-screen like a native
@@ -152,7 +162,7 @@ scripts/      generate-icons.mjs
 - **Phase 1 ✅** Food search (USDA + OFF via Edge Function), Today logging, quick-add, recents/favorites, custom foods.
 - **Phase 2 ✅** Goals + targets (Mifflin-St Jeor), dashboard rings + remaining budget, trends (streak/adherence/calories), weight chart.
 - **Phase 3 ✅** Adaptive TDEE engine + micronutrient report. (Apple Health/Shortcuts bridge deferred — manual weigh-in is the default.)
-- **Phase 4** Saved meals, barcode scan, recipes, AI natural-language logging.
+- **Phase 4 ✅** Saved meals, copy-yesterday, recipes, curated food library, barcode scan, AI natural-language logging.
 - **Phase 5** Meal planner (auto-generate to targets, swaps, locks, pantry-aware grocery list).
 - **Phase 6** Full CSV/JSON export + import, accessibility, polish.
 
