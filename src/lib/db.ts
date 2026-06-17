@@ -17,6 +17,7 @@ class AppDB extends Dexie {
   tdee_estimates!: EntityTable<TdeeEstimate, 'id'>
   meals!: EntityTable<Meal, 'id'>
   recipes!: EntityTable<Recipe, 'id'>
+  pantry!: EntityTable<{ name: string }, 'name'>
   profile!: EntityTable<Profile, 'user_id'>
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<{ key: string; value: unknown }, 'key'>
@@ -51,6 +52,10 @@ class AppDB extends Dexie {
     // v6: recipes (ingredients stored inline as JSONB).
     this.version(6).stores({
       recipes: 'id, name, updated_at',
+    })
+    // v7: local pantry (names you already have) for grocery-list subtraction.
+    this.version(7).stores({
+      pantry: 'name',
     })
   }
 }

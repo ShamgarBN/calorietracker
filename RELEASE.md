@@ -5,6 +5,26 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v0.6.0 — Phase 5: Meal planner
+
+The headline feature — and it's one system with the tracker, not a bolt-on.
+
+**Added**
+- **Auto-generate a day to your targets**: a greedy + repair algorithm allocates the calorie target
+  across meals, picks protein/carb/veg per slot from the curated library + your foods/recipes, and
+  nudges portions to hit protein (≥92%) and stay within ±8% of calories. (4 unit tests.)
+- **Lock / Swap / Regenerate**: lock meals you like; regenerate or swap a single meal leaves locks
+  untouched. Deterministic so swaps are reproducible.
+- **Pre-log to today**: a plan writes `planned` entries that show on Today (distinct, dashed) — tap
+  **"Ate it"** to flip a planned item to logged. Totals still count only what you've actually eaten.
+- **Pantry-aware grocery list**: merges duplicate ingredients across meals (recipes expand into their
+  ingredients), sorts by aisle, and subtracts what you check off into your pantry.
+
+**Notes**
+- Respects your dietary exclusions (from goal setup). Pantry is per-device for now.
+
+---
+
 ## v0.5.0 — Phase 4: Fast logging
 
 Make logging effortless — the difference between a tracker you keep up and one you abandon.

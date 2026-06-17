@@ -5,6 +5,7 @@ import { generatePlan, savePlannedDay, type GeneratedPlan } from '@/data/planner
 import { planTotals, type PlannedItem } from '@/lib/planner'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
 import { MacroBar } from '@/components/ProgressRing'
+import { GroceryList } from '@/components/GroceryList'
 import { todayISO } from '@/lib/util'
 import type { MealSlot } from '@/types/db'
 
@@ -148,6 +149,8 @@ export function Plan() {
             Lock 🔒 meals you like, then Regenerate or Swap. Pre-logged meals show on Today as planned —
             tap “Ate it” to confirm.
           </p>
+
+          <GroceryList date={date} />
         </>
       )}
     </div>
