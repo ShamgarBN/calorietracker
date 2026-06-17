@@ -9,11 +9,10 @@ MacroFactor / Cronometer / MyFitnessPal / Eat This Much:
 - **Fused planner ↔ log** — one shared food database and one set of targets; planning pre-logs, logging updates the plan.
 - **Offline-first PWA** — installs to your iPhone home screen and runs in any desktop browser, syncing through Supabase.
 
-> **Status: Phase 2 (targets & dashboard).** Installable PWA, magic-link auth, offline sync outbox, fast
-> food logging (USDA + Open Food Facts search, recents/favorites, custom foods, quick-add), goal setup
-> with calorie + macro targets, a Today dashboard (rings + remaining budget), and trends (streak /
-> adherence / calories-vs-target / weight). Adaptive engine and planner land in later phases — see
-> [Roadmap](#roadmap).
+> **Status: Phase 3 (adaptive engine & micros).** Everything from logging through goals, plus the
+> adaptive TDEE engine (weekly expenditure recalculated from your weight-trend + intake, with a
+> "why it changed" explanation and one-tap apply) and a Cronometer-style micronutrient report. The
+> meal planner lands in Phase 5 — see [Roadmap](#roadmap).
 
 ---
 
@@ -152,7 +151,7 @@ scripts/      generate-icons.mjs
 - **Phase 0 ✅** Skeleton, auth, offline sync outbox, deploy + keep-alive.
 - **Phase 1 ✅** Food search (USDA + OFF via Edge Function), Today logging, quick-add, recents/favorites, custom foods.
 - **Phase 2 ✅** Goals + targets (Mifflin-St Jeor), dashboard rings + remaining budget, trends (streak/adherence/calories), weight chart.
-- **Phase 3** Adaptive TDEE engine + micronutrient report + Apple Health (Shortcuts) bridge.
+- **Phase 3 ✅** Adaptive TDEE engine + micronutrient report. (Apple Health/Shortcuts bridge deferred — manual weigh-in is the default.)
 - **Phase 4** Saved meals, barcode scan, recipes, AI natural-language logging.
 - **Phase 5** Meal planner (auto-generate to targets, swaps, locks, pantry-aware grocery list).
 - **Phase 6** Full CSV/JSON export + import, accessibility, polish.

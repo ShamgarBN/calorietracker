@@ -5,6 +5,28 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v0.4.0 — Phase 3: Adaptive engine & micronutrients
+
+The tracker's headline: targets that recalibrate from your real data, plus micronutrient depth.
+
+**Added**
+- **Adaptive TDEE engine** (Trends → Adaptive expenditure): estimates your true daily expenditure from
+  energy balance — `meanIntake − (Δtrend-weight × 7700) / days` over a trailing window, using the
+  smoothed (EWMA) trend weight to strip out water noise. Confidence-weighted by how complete the window
+  is, blended with the prior so a noisy week can't swing targets, with a Mifflin cold-start fallback.
+  Shows the estimate, a confidence bar, a plain-English "why it changed", and a one-tap **Apply to my
+  targets** (which keeps your goal rate).
+- **Micronutrient report** (Cronometer-style): 7-day average intake vs floors/ceilings, shortfalls and
+  overages surfaced first.
+- 6 unit tests covering the estimator, targets math, and micro flagging.
+
+**Notes**
+- The engine is intentionally data-hungry — it shows "keep logging" until ~2 weeks of logs + a few
+  weigh-ins exist, then activates.
+- The Apple Health / Shortcuts bridge was **deferred** (manual weigh-in remains the way to log weight).
+
+---
+
 ## v0.3.0 — Phase 2: Targets & dashboard
 
 Goals turn the log into a dashboard: see progress vs. targets and trends over time.
