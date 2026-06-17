@@ -9,6 +9,8 @@ import { getCurrentTarget } from '@/data/targets'
 import { groupDailyTotals, buildSeries, currentStreak, adherenceRate, average } from '@/lib/analytics'
 import { usePrefs } from '@/lib/prefs'
 import { fromKg } from '@/lib/units'
+import { AdaptiveCard } from '@/components/AdaptiveCard'
+import { MicroReport } from '@/components/MicroReport'
 
 const RANGES = [
   { days: 14, label: '14d' },
@@ -69,6 +71,8 @@ export function Trends() {
         <StatCard label="Adherence" value={adherence == null ? '—' : `${Math.round(adherence * 100)}%`} sub="on target" />
       </div>
 
+      <AdaptiveCard />
+
       <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <h3 className="mb-3 text-sm font-medium text-muted">Calories vs target</h3>
         <ResponsiveContainer width="100%" height={200}>
@@ -105,6 +109,8 @@ export function Trends() {
           <p className="text-sm text-muted">Log a few weigh-ins to see your trend line.</p>
         )}
       </section>
+
+      <MicroReport />
     </div>
   )
 }

@@ -4,6 +4,7 @@
 // the TDEE estimate with one derived from real weight-trend + intake data; the macro
 // split logic here is reused.
 
+import { KCAL_PER_KG } from './constants'
 import type { Profile, Sex } from '@/types/db'
 
 export interface TargetValues {
@@ -26,7 +27,6 @@ const ACTIVITY_FACTOR: Record<Profile['activity_level'], number> = {
   very_active: 1.9,
 }
 
-const KCAL_PER_KG = 7700 // ~energy in 1 kg of body mass
 const PROTEIN_G_PER_KG = 1.8 // protein anchored to bodyweight
 const FAT_PCT_OF_KCAL = 0.25 // fat as a share of calories (floor for hormones/satiety)
 const MIN_CALORIES = 1200 // safety floor

@@ -22,11 +22,19 @@ const CONFLICT_TARGET: Record<string, string> = {
   weight_entries: 'client_uuid',
   foods: 'id',
   targets: 'id',
+  tdee_estimates: 'id',
   profile: 'user_id',
 }
 
 /** Local Dexie table that mirrors each synced server table (for incremental pulls). */
-const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'foods', 'profile'] as const
+const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'tdee_estimates', 'foods', 'profile'] as const
+
+/** Column used for the incremental-pull cursor. Append-only tables have no updated_at. */
+const CURSOR_COLUMN: Record<string, string> = {
+  targets: 'created_at',
+  tdee_estimates: 'created_at',
+}
+const cursorCol = (table: string) => CURSOR_COLUMN[table] ?? 'updated_at'
 
 interface SyncState {
   online: boolean
@@ -131,19 +139,23 @@ export async function pullChanges(): Promise<void> {
   if (!s().online || !(await hasSession())) return
   for (const table of PULL_TABLES) {
     try {
+      const col = cursorCol(table)
       const cursor = await getSyncCursor(table)
-      let q = supabase.from(table).select('*').order('updated_at', { ascending: true }).limit(1000)
-      if (cursor) q = q.gt('updated_at', cursor)
+      let q = supabase.from(table).select('*').order(col, { ascending: true }).limit(1000)
+      if (cursor) q = q.gt(col, cursor)
       const { data, error } = await q
       if (error) throw error
       if (!data?.length) continue
       // @ts-expect-error dynamic table access; rows match the cache shape by construction
       await db[table].bulkPut(data)
-      const maxUpdated = data.reduce(
-        (m: string, r: { updated_at?: string }) => (r.updated_at && r.updated_at > m ? r.updated_at : m),
+      const maxCursor = data.reduce(
+        (m: string, r: Record<string, unknown>) => {
+          const v = r[col] as string | undefined
+          return v && v > m ? v : m
+        },
         cursor ?? '',
       )
-      if (maxUpdated) await setSyncCursor(table, maxUpdated)
+      if (maxCursor) await setSyncCursor(table, maxCursor)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       s().set({ lastError: msg })

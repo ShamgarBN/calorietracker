@@ -1,4 +1,4 @@
-import { sumNutrients, type Nutrients } from './nutrients'
+import { sumNutrients, NUTRIENT_BY_KEY, type Nutrients, type NutrientKey, type TargetKind } from './nutrients'
 import { todayISO } from './util'
 import type { LogEntry } from '@/types/db'
 
@@ -72,4 +72,53 @@ export function average(series: DayPoint[], key: keyof DayPoint): number {
   const logged = series.filter((p) => p.logged)
   if (!logged.length) return 0
   return Math.round(logged.reduce((s, p) => s + (p[key] as number), 0) / logged.length)
+}
+
+export type MicroStatus = 'short' | 'over' | 'ok'
+export interface MicroRow {
+  key: NutrientKey
+  label: string
+  unit: string
+  avg: number
+  target: number
+  kind: TargetKind
+  pct: number // avg / target
+  status: MicroStatus
+}
+
+type MicroLimits = Partial<Record<NutrientKey, { kind: TargetKind; value: number }>>
+
+/** Average daily micronutrient intake over recently-logged days vs floors/ceilings. */
+export function microReport(
+  daily: Map<string, Nutrients>,
+  limits: MicroLimits,
+  windowDays = 7,
+): { rows: MicroRow[]; loggedDays: number } {
+  const cutoff = new Date(todayISO() + 'T00:00:00')
+  cutoff.setDate(cutoff.getDate() - (windowDays - 1))
+  const cutoffISO = todayISO(cutoff)
+
+  const days = [...daily.entries()].filter(([date, n]) => date >= cutoffISO && (n.energy ?? 0) > 0)
+  const rows: MicroRow[] = []
+  if (!days.length) return { rows, loggedDays: 0 }
+
+  for (const [k, lim] of Object.entries(limits) as [NutrientKey, { kind: TargetKind; value: number }][]) {
+    if (lim.kind === 'none' || !lim.value) continue
+    const def = NUTRIENT_BY_KEY[k]
+    if (!def) continue
+    const avg = days.reduce((s, [, n]) => s + (n[k] ?? 0), 0) / days.length
+    const pct = avg / lim.value
+    let status: MicroStatus = 'ok'
+    if (lim.kind === 'floor' && pct < 0.9) status = 'short'
+    if (lim.kind === 'ceiling' && pct > 1.0) status = 'over'
+    rows.push({ key: k, label: def.label, unit: def.unit, avg, target: lim.value, kind: lim.kind, pct, status })
+  }
+  // Problems first (short/over), then by how far off.
+  rows.sort((a, b) => {
+    const ap = a.status === 'ok' ? 1 : 0
+    const bp = b.status === 'ok' ? 1 : 0
+    if (ap !== bp) return ap - bp
+    return Math.abs(1 - b.pct) - Math.abs(1 - a.pct)
+  })
+  return { rows, loggedDays: days.length }
 }

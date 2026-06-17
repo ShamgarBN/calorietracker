@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Food, LogEntry, OutboxItem, Profile, TargetRow, WeightEntry } from '@/types/db'
+import type { Food, LogEntry, OutboxItem, Profile, TargetRow, TdeeEstimate, WeightEntry } from '@/types/db'
 
 // Local mirror of the user's data + the durable write outbox.
 //
@@ -14,6 +14,7 @@ class AppDB extends Dexie {
   log_entries!: EntityTable<LogEntry, 'client_uuid'>
   weight_entries!: EntityTable<WeightEntry, 'client_uuid'>
   targets!: EntityTable<TargetRow, 'id'>
+  tdee_estimates!: EntityTable<TdeeEstimate, 'id'>
   profile!: EntityTable<Profile, 'user_id'>
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<{ key: string; value: unknown }, 'key'>
@@ -36,6 +37,10 @@ class AppDB extends Dexie {
     // v3: cache the single profile row locally for offline goal/target reads.
     this.version(3).stores({
       profile: 'user_id, updated_at',
+    })
+    // v4: adaptive engine weekly expenditure estimates.
+    this.version(4).stores({
+      tdee_estimates: 'id, week_start, created_at',
     })
   }
 }
