@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles } from 'lucide-react'
+import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles, Check } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
 import { deleteEntry, dayTotals, copyDay } from '@/data/log'
+import { markPlannedEaten } from '@/data/planner'
 import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
 import { SaveMealSheet } from '@/components/SaveMealSheet'
@@ -52,8 +53,9 @@ export function Today() {
       />
 
       {MEAL_SLOTS.map((slot) => {
-        const slotEntries = entries.filter((e) => e.meal_slot === slot.value)
-        const slotKcal = Math.round(dayTotals(slotEntries).energy ?? 0)
+        const slotLogged = entries.filter((e) => e.meal_slot === slot.value && e.source === 'logged')
+        const slotPlanned = entries.filter((e) => e.meal_slot === slot.value && e.source === 'planned')
+        const slotKcal = Math.round(dayTotals(slotLogged).energy ?? 0)
         return (
           <section key={slot.value}>
             <div className="mb-1 flex items-center justify-between">
@@ -62,7 +64,7 @@ export function Today() {
                 {slotKcal > 0 && <span className="ml-2 text-xs text-muted">{slotKcal} kcal</span>}
               </h3>
               <div className="flex items-center gap-3">
-                {slotEntries.length > 0 && (
+                {slotLogged.length > 0 && (
                   <button
                     onClick={() => setSaveSlot(slot.value)}
                     aria-label={`Save ${slot.label} as a meal`}
@@ -79,16 +81,27 @@ export function Today() {
                 </button>
               </div>
             </div>
-            {slotEntries.length > 0 ? (
-              <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
-                {slotEntries.map((e) => (
-                  <EntryRow key={e.client_uuid} entry={e} />
-                ))}
-              </ul>
-            ) : (
+            {slotLogged.length === 0 && slotPlanned.length === 0 ? (
               <p className="rounded-xl border border-dashed border-[var(--color-border)] px-3 py-3 text-xs text-muted">
                 Nothing logged yet.
               </p>
+            ) : (
+              <div className="space-y-1.5">
+                {slotLogged.length > 0 && (
+                  <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
+                    {slotLogged.map((e) => (
+                      <EntryRow key={e.client_uuid} entry={e} />
+                    ))}
+                  </ul>
+                )}
+                {slotPlanned.length > 0 && (
+                  <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-dashed border-[var(--color-border)]">
+                    {slotPlanned.map((e) => (
+                      <PlannedRow key={e.client_uuid} entry={e} />
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </section>
         )
@@ -111,11 +124,40 @@ export function Today() {
       <SaveMealSheet
         open={saveSlot !== null}
         onClose={() => setSaveSlot(null)}
-        entries={entries.filter((e) => e.meal_slot === saveSlot)}
+        entries={entries.filter((e) => e.meal_slot === saveSlot && e.source === 'logged')}
         defaultName={saveSlot ? `My ${saveSlot}` : 'Saved meal'}
       />
       <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={today} />
     </div>
+  )
+}
+
+function PlannedRow({ entry }: { entry: LogEntry }) {
+  return (
+    <li className="flex items-center justify-between gap-2 px-3 py-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm text-muted">{entry.description}</p>
+        <p className="truncate text-xs text-muted">
+          planned · {entry.grams > 0 ? `${Math.round(entry.grams)} g · ` : ''}
+          {Math.round(entry.nutrients.energy ?? 0)} kcal
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          onClick={() => void markPlannedEaten(entry.client_uuid)}
+          className="flex items-center gap-1 rounded-md bg-[var(--color-brand)] px-2 py-1 text-xs font-medium text-black"
+        >
+          <Check size={12} /> Ate it
+        </button>
+        <button
+          onClick={() => void deleteEntry(entry.client_uuid)}
+          aria-label={`Remove planned ${entry.description}`}
+          className="text-muted hover:text-[var(--color-warn)]"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+    </li>
   )
 }
 
