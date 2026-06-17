@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles, Check } from 'lucide-react'
+import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles, Check, Droplet, Undo2 } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
 import { deleteEntry, dayTotals, copyDay } from '@/data/log'
 import { markPlannedEaten } from '@/data/planner'
+import { addWater, undoWater } from '@/data/water'
+import { getNote, setNote } from '@/data/notes'
 import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
 import { SaveMealSheet } from '@/components/SaveMealSheet'
@@ -107,6 +109,8 @@ export function Today() {
         )
       })}
 
+      <WaterCard date={today} />
+      <NotesCard date={today} />
       <WeighInCard />
 
       <LogFoodSheet
@@ -129,6 +133,75 @@ export function Today() {
       />
       <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={today} />
     </div>
+  )
+}
+
+function WaterCard({ date }: { date: string }) {
+  const total =
+    useLiveQuery(
+      async () => {
+        const rows = await db.water_entries.where('date').equals(date).toArray()
+        return rows.filter((w) => !w.deleted).reduce((s, w) => s + w.ml, 0)
+      },
+      [date],
+      0,
+    ) ?? 0
+  const goal = 3000
+  return (
+    <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Droplet size={15} className="text-[var(--color-fat)]" /> Water
+        </h3>
+        <span className="text-xs text-muted">
+          {total} / {goal} ml
+        </span>
+      </div>
+      <div className="mb-2 h-2 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+        <div className="h-full rounded-full bg-[var(--color-fat)]" style={{ width: `${Math.min(total / goal, 1) * 100}%` }} />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => void addWater(250, date)} className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-sm">
+          +250 ml
+        </button>
+        <button onClick={() => void addWater(500, date)} className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-sm">
+          +500 ml
+        </button>
+        <button onClick={() => void undoWater(date)} aria-label="Undo last water" className="rounded-lg border border-[var(--color-border)] px-3 text-muted">
+          <Undo2 size={15} />
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function NotesCard({ date }: { date: string }) {
+  const [note, setNoteState] = useState('')
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    void getNote(date).then((n) => {
+      setNoteState(n)
+      setLoaded(true)
+    })
+  }, [date])
+  // Debounced save.
+  useEffect(() => {
+    if (!loaded) return
+    const t = setTimeout(() => void setNote(note, date), 600)
+    return () => clearTimeout(t)
+  }, [note, date, loaded])
+
+  return (
+    <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <h3 className="mb-2 text-sm font-medium">Notes</h3>
+      <textarea
+        value={note}
+        onChange={(e) => setNoteState(e.target.value)}
+        rows={2}
+        placeholder="How did today feel? Cravings, energy, training…"
+        className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--color-brand)]"
+      />
+    </section>
   )
 }
 

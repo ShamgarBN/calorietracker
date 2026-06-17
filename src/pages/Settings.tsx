@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
-import { Target } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Target, Download, Upload, FileJson } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { storageEstimate } from '@/lib/storage'
 import { useSyncStore } from '@/lib/sync'
 import { usePrefs } from '@/lib/prefs'
 import type { WeightUnit } from '@/lib/units'
 import { GoalSetup } from '@/components/GoalSetup'
+import { exportAllJson, exportLogCsv, importJson, download } from '@/data/exportImport'
 
 export function Settings() {
   const { pending, lastSyncedAt } = useSyncStore()
@@ -74,6 +75,8 @@ export function Settings() {
         <Row label="Local storage" value={storage} />
       </section>
 
+      <DataSection />
+
       <button
         onClick={() => void supabase.auth.signOut()}
         className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm text-[var(--color-warn)]"
@@ -85,6 +88,66 @@ export function Settings() {
         Goals, units, dietary preferences, and data export land in Phases 2 & 6.
       </p>
     </div>
+  )
+}
+
+function DataSection() {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<string | null>(null)
+
+  function stamp() {
+    return new Date().toISOString().slice(0, 10)
+  }
+
+  async function onImport(file: File) {
+    setStatus('Importing…')
+    try {
+      const result = await importJson(await file.text())
+      setStatus(`Imported ${result.total} records. Syncing…`)
+    } catch (e) {
+      setStatus(e instanceof Error ? `Import failed: ${e.message}` : 'Import failed')
+    }
+  }
+
+  return (
+    <section className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <h3 className="flex items-center gap-1.5 text-sm font-medium">
+        <FileJson size={15} className="text-[var(--color-brand)]" /> Your data
+      </h3>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={async () => download(await exportAllJson(), `calorie-tracker-${stamp()}.json`)}
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+        >
+          <Download size={14} /> Export JSON
+        </button>
+        <button
+          onClick={async () => download(await exportLogCsv(), `food-log-${stamp()}.csv`)}
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+        >
+          <Download size={14} /> Export CSV
+        </button>
+      </div>
+      <button
+        onClick={() => fileRef.current?.click()}
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+      >
+        <Upload size={14} /> Import JSON backup
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void onImport(f)
+          e.target.value = ''
+        }}
+      />
+      {status && <p className="text-xs text-muted">{status}</p>}
+      <p className="text-xs text-muted">JSON is a full, re-importable backup. CSV is your food log for spreadsheets.</p>
+    </section>
   )
 }
 

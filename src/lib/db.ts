@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Food, LogEntry, Meal, OutboxItem, Profile, Recipe, TargetRow, TdeeEstimate, WeightEntry } from '@/types/db'
+import type { DayNote, Food, LogEntry, Meal, OutboxItem, Profile, Recipe, TargetRow, TdeeEstimate, WaterEntry, WeightEntry } from '@/types/db'
 
 // Local mirror of the user's data + the durable write outbox.
 //
@@ -18,6 +18,8 @@ class AppDB extends Dexie {
   meals!: EntityTable<Meal, 'id'>
   recipes!: EntityTable<Recipe, 'id'>
   pantry!: EntityTable<{ name: string }, 'name'>
+  water_entries!: EntityTable<WaterEntry, 'client_uuid'>
+  day_notes!: EntityTable<DayNote, 'date'>
   profile!: EntityTable<Profile, 'user_id'>
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<{ key: string; value: unknown }, 'key'>
@@ -56,6 +58,11 @@ class AppDB extends Dexie {
     // v7: local pantry (names you already have) for grocery-list subtraction.
     this.version(7).stores({
       pantry: 'name',
+    })
+    // v8: water + daily notes (synced).
+    this.version(8).stores({
+      water_entries: 'client_uuid, id, date, updated_at, deleted',
+      day_notes: 'date, updated_at',
     })
   }
 }

@@ -25,11 +25,13 @@ const CONFLICT_TARGET: Record<string, string> = {
   tdee_estimates: 'id',
   meals: 'id',
   recipes: 'id',
+  water_entries: 'client_uuid',
+  day_notes: 'user_id,date',
   profile: 'user_id',
 }
 
 /** Local Dexie table that mirrors each synced server table (for incremental pulls). */
-const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'tdee_estimates', 'meals', 'recipes', 'foods', 'profile'] as const
+const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'tdee_estimates', 'meals', 'recipes', 'water_entries', 'day_notes', 'foods', 'profile'] as const
 
 /** Column used for the incremental-pull cursor. Append-only tables have no updated_at. */
 const CURSOR_COLUMN: Record<string, string> = {
@@ -74,7 +76,7 @@ async function hasSession(): Promise<boolean> {
  * `localApply` runs immediately so the UI updates even fully offline.
  */
 export async function queueMutation(args: {
-  table: keyof typeof CONFLICT_TARGET
+  table: string // one of CONFLICT_TARGET's keys
   op: 'upsert' | 'delete'
   payload: Record<string, unknown>
   client_uuid: string

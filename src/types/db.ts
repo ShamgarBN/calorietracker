@@ -158,6 +158,24 @@ export interface Meal {
   updated_at: Timestamptz
 }
 
+export interface WaterEntry {
+  id: UUID
+  user_id: UUID
+  client_uuid: UUID
+  date: ISODate
+  ml: number
+  deleted: boolean
+  created_at: Timestamptz
+  updated_at: Timestamptz
+}
+
+export interface DayNote {
+  user_id: UUID
+  date: ISODate
+  note: string
+  updated_at: Timestamptz
+}
+
 /** All locally-queued mutations live here until synced. The durability guarantee. */
 export interface OutboxItem {
   id?: number // Dexie auto-increment
