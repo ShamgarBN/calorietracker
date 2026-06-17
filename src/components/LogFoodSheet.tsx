@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Modal } from './Modal'
 import { FoodSearch } from './FoodSearch'
@@ -6,8 +6,10 @@ import { ServingPicker } from './ServingPicker'
 import { CustomFoodForm } from './CustomFoodForm'
 import { RecipeBuilder } from './RecipeBuilder'
 import { RecipeServingPicker } from './RecipeServingPicker'
-import { BarcodeScanner } from './BarcodeScanner'
 import { logMeal } from '@/data/meals'
+
+// Defer the ZXing barcode library until the user actually scans.
+const BarcodeScanner = lazy(() => import('./BarcodeScanner').then((m) => ({ default: m.BarcodeScanner })))
 import { lookupBarcode } from '@/data/foodSource'
 import { saveFoodFromResult } from '@/data/foods'
 import type { Food, Meal, Recipe, MealSlot } from '@/types/db'
@@ -87,7 +89,9 @@ export function LogFoodSheet({
         />
       )}
       {stage.name === 'scan' && (
-        <BarcodeScanner onDetected={handleBarcode} onBack={() => setStage({ name: 'search' })} />
+        <Suspense fallback={<div className="py-10 text-center text-muted"><Loader2 size={22} className="mx-auto animate-spin" /></div>}>
+          <BarcodeScanner onDetected={handleBarcode} onBack={() => setStage({ name: 'search' })} />
+        </Suspense>
       )}
       {stage.name === 'scanLookup' && (
         <div className="flex flex-col items-center gap-3 py-10 text-muted">
