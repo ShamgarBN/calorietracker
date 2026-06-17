@@ -3,7 +3,7 @@ import { queueMutation } from '@/lib/sync'
 import { currentUserId } from '@/lib/supabase'
 import { uuid, todayISO } from '@/lib/util'
 import { scaleNutrients, sumNutrients, type Nutrients } from '@/lib/nutrients'
-import type { Food, LogEntry, MealSlot } from '@/types/db'
+import type { Food, LogEntry, MealItem, MealSlot } from '@/types/db'
 
 function nowISO() {
   return new Date().toISOString()
@@ -95,6 +95,55 @@ export async function quickAddMacros(args: {
     deleted: false,
   }
   await persistEntry(entry)
+}
+
+/** Create a logged entry from a saved-meal item (nutrients already absolute). */
+export async function logEntryFromItem(item: MealItem, mealSlot: MealSlot, date = todayISO()): Promise<void> {
+  const userId = await currentUserId()
+  const entry: LogEntry = {
+    id: uuid(),
+    user_id: userId,
+    client_uuid: uuid(),
+    date,
+    meal_slot: mealSlot,
+    source: 'logged',
+    low_confidence: false,
+    food_id: item.food_id,
+    recipe_id: item.recipe_id,
+    description: item.description,
+    quantity: 1,
+    unit: item.unit,
+    grams: item.grams,
+    nutrients: item.nutrients,
+    plan_id: null,
+    locked: false,
+    created_at: nowISO(),
+    updated_at: nowISO(),
+    deleted: false,
+  }
+  await persistEntry(entry)
+}
+
+/** Copy a day's logged entries to another date (same meal slots). Returns count copied. */
+export async function copyDay(fromDate: string, toDate: string): Promise<number> {
+  const entries = (await getDayEntries(fromDate)).filter((e) => e.source === 'logged')
+  for (const e of entries) await copyEntry(e, toDate, e.meal_slot)
+  return entries.length
+}
+
+/** Copy one meal slot from another day. Returns count copied. */
+export async function copyMealSlot(fromDate: string, slot: MealSlot, toDate: string): Promise<number> {
+  const entries = (await getDayEntries(fromDate)).filter((e) => e.source === 'logged' && e.meal_slot === slot)
+  for (const e of entries) await copyEntry(e, toDate, slot)
+  return entries.length
+}
+
+async function copyEntry(e: LogEntry, toDate: string, slot: MealSlot): Promise<void> {
+  await logEntryFromItem(
+    { food_id: e.food_id, recipe_id: e.recipe_id, description: e.description, grams: e.grams, unit: e.unit, nutrients: e.nutrients },
+    slot,
+    toDate,
+  )
 }
 
 export async function deleteEntry(clientUuid: string): Promise<void> {

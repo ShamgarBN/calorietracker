@@ -118,6 +118,46 @@ export interface TdeeEstimate {
   created_at: Timestamptz
 }
 
+/** An ingredient line in a recipe (nutrients stored per 100g for re-scaling). */
+export interface RecipeIngredient {
+  food_id: UUID | null
+  description: string
+  grams: number
+  nutrients_per_100g: Nutrients
+}
+
+export interface Recipe {
+  id: UUID
+  user_id: UUID
+  name: string
+  servings: number
+  steps: string | null
+  ingredients: RecipeIngredient[]
+  nutrients_per_serving: Nutrients
+  tags: string[]
+  created_at: Timestamptz
+  updated_at: Timestamptz
+}
+
+/** One food/recipe portion inside a saved meal (nutrients are absolute, pre-scaled). */
+export interface MealItem {
+  food_id: UUID | null
+  recipe_id: UUID | null
+  description: string
+  grams: number
+  unit: string
+  nutrients: Nutrients
+}
+
+export interface Meal {
+  id: UUID
+  user_id: UUID
+  name: string
+  items: MealItem[]
+  created_at: Timestamptz
+  updated_at: Timestamptz
+}
+
 /** All locally-queued mutations live here until synced. The durability guarantee. */
 export interface OutboxItem {
   id?: number // Dexie auto-increment

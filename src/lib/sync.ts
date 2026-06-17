@@ -23,11 +23,13 @@ const CONFLICT_TARGET: Record<string, string> = {
   foods: 'id',
   targets: 'id',
   tdee_estimates: 'id',
+  meals: 'id',
+  recipes: 'id',
   profile: 'user_id',
 }
 
 /** Local Dexie table that mirrors each synced server table (for incremental pulls). */
-const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'tdee_estimates', 'foods', 'profile'] as const
+const PULL_TABLES = ['weight_entries', 'log_entries', 'targets', 'tdee_estimates', 'meals', 'recipes', 'foods', 'profile'] as const
 
 /** Column used for the incremental-pull cursor. Append-only tables have no updated_at. */
 const CURSOR_COLUMN: Record<string, string> = {
@@ -104,10 +106,9 @@ export async function flushOutbox(): Promise<void> {
     for (const item of items) {
       try {
         if (item.op === 'delete') {
-          const { error } = await supabase
-            .from(item.table)
-            .delete()
-            .eq('client_uuid', item.client_uuid)
+          // Delete by the table's key column (client_uuid for logs, id for meals/etc).
+          const keyCol = CONFLICT_TARGET[item.table].split(',')[0]
+          const { error } = await supabase.from(item.table).delete().eq(keyCol, item.client_uuid)
           if (error) throw error
         } else {
           const { error } = await supabase

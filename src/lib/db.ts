@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Food, LogEntry, OutboxItem, Profile, TargetRow, TdeeEstimate, WeightEntry } from '@/types/db'
+import type { Food, LogEntry, Meal, OutboxItem, Profile, Recipe, TargetRow, TdeeEstimate, WeightEntry } from '@/types/db'
 
 // Local mirror of the user's data + the durable write outbox.
 //
@@ -15,6 +15,8 @@ class AppDB extends Dexie {
   weight_entries!: EntityTable<WeightEntry, 'client_uuid'>
   targets!: EntityTable<TargetRow, 'id'>
   tdee_estimates!: EntityTable<TdeeEstimate, 'id'>
+  meals!: EntityTable<Meal, 'id'>
+  recipes!: EntityTable<Recipe, 'id'>
   profile!: EntityTable<Profile, 'user_id'>
   outbox!: EntityTable<OutboxItem, 'id'>
   meta!: EntityTable<{ key: string; value: unknown }, 'key'>
@@ -41,6 +43,14 @@ class AppDB extends Dexie {
     // v4: adaptive engine weekly expenditure estimates.
     this.version(4).stores({
       tdee_estimates: 'id, week_start, created_at',
+    })
+    // v5: saved meals (items stored inline as JSONB).
+    this.version(5).stores({
+      meals: 'id, name, updated_at',
+    })
+    // v6: recipes (ingredients stored inline as JSONB).
+    this.version(6).stores({
+      recipes: 'id, name, updated_at',
     })
   }
 }

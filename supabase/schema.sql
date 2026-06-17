@@ -89,11 +89,14 @@ create table if not exists tracker.recipes (
   name             text not null,
   servings         numeric not null default 1,
   steps            text,
+  ingredients      jsonb not null default '[]',  -- [{food_id, description, grams, nutrients_per_100g}]
   nutrients_per_serving jsonb not null default '{}',
   tags             text[] not null default '{}',
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+-- For projects created before ingredients was added (idempotent):
+alter table tracker.recipes add column if not exists ingredients jsonb not null default '[]';
 create index if not exists recipes_user_idx on tracker.recipes(user_id);
 
 create table if not exists tracker.recipe_ingredients (
@@ -113,9 +116,12 @@ create table if not exists tracker.meals (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   name        text not null,
+  items       jsonb not null default '[]',  -- [{food_id, description, grams, nutrients}]
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+-- For projects created before items was added (idempotent):
+alter table tracker.meals add column if not exists items jsonb not null default '[]';
 create table if not exists tracker.meal_items (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,

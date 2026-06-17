@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Zap, Trash2 } from 'lucide-react'
+import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
-import { deleteEntry, dayTotals } from '@/data/log'
+import { deleteEntry, dayTotals, copyDay } from '@/data/log'
 import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
+import { SaveMealSheet } from '@/components/SaveMealSheet'
 import { usePrefs } from '@/lib/prefs'
 import { toKg, formatWeight } from '@/lib/units'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
@@ -20,6 +21,13 @@ export function Today() {
   const today = todayISO()
   const [foodSheet, setFoodSheet] = useState<MealSlot | null>(null)
   const [quickSheet, setQuickSheet] = useState<MealSlot | null>(null)
+  const [saveSlot, setSaveSlot] = useState<MealSlot | null>(null)
+
+  function yesterdayISO() {
+    const d = new Date(today + 'T00:00:00')
+    d.setDate(d.getDate() - 1)
+    return d.toISOString().slice(0, 10)
+  }
 
   const entries =
     useLiveQuery(
@@ -33,7 +41,12 @@ export function Today() {
 
   return (
     <div className="space-y-6">
-      <DayDashboard totals={totals} target={target} onQuickAdd={() => setQuickSheet('snack')} />
+      <DayDashboard
+        totals={totals}
+        target={target}
+        onQuickAdd={() => setQuickSheet('snack')}
+        onCopyYesterday={() => void copyDay(yesterdayISO(), today)}
+      />
 
       {MEAL_SLOTS.map((slot) => {
         const slotEntries = entries.filter((e) => e.meal_slot === slot.value)
@@ -45,12 +58,23 @@ export function Today() {
                 {slot.label}
                 {slotKcal > 0 && <span className="ml-2 text-xs text-muted">{slotKcal} kcal</span>}
               </h3>
-              <button
-                onClick={() => setFoodSheet(slot.value)}
-                className="flex items-center gap-1 text-sm text-[var(--color-brand)]"
-              >
-                <Plus size={16} /> Add
-              </button>
+              <div className="flex items-center gap-3">
+                {slotEntries.length > 0 && (
+                  <button
+                    onClick={() => setSaveSlot(slot.value)}
+                    aria-label={`Save ${slot.label} as a meal`}
+                    className="text-muted hover:text-[var(--color-brand)]"
+                  >
+                    <BookmarkPlus size={16} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setFoodSheet(slot.value)}
+                  className="flex items-center gap-1 text-sm text-[var(--color-brand)]"
+                >
+                  <Plus size={16} /> Add
+                </button>
+              </div>
             </div>
             {slotEntries.length > 0 ? (
               <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
@@ -81,6 +105,12 @@ export function Today() {
         mealSlot={quickSheet ?? 'snack'}
         date={today}
       />
+      <SaveMealSheet
+        open={saveSlot !== null}
+        onClose={() => setSaveSlot(null)}
+        entries={entries.filter((e) => e.meal_slot === saveSlot)}
+        defaultName={saveSlot ? `My ${saveSlot}` : 'Saved meal'}
+      />
     </div>
   )
 }
@@ -89,10 +119,12 @@ function DayDashboard({
   totals,
   target,
   onQuickAdd,
+  onCopyYesterday,
 }: {
   totals: Nutrients
   target: TargetRow | undefined
   onQuickAdd: () => void
+  onCopyYesterday: () => void
 }) {
   const eaten = Math.round(totals.energy ?? 0)
 
@@ -100,12 +132,21 @@ function DayDashboard({
     <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Today</h2>
-        <button
-          onClick={onQuickAdd}
-          className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
-        >
-          <Zap size={14} /> Quick add
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onCopyYesterday}
+            title="Copy yesterday's food into today"
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
+          >
+            <CopyPlus size={14} /> Copy
+          </button>
+          <button
+            onClick={onQuickAdd}
+            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
+          >
+            <Zap size={14} /> Quick add
+          </button>
+        </div>
       </div>
 
       {target ? (
