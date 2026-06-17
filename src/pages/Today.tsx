@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus } from 'lucide-react'
+import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
 import { deleteEntry, dayTotals, copyDay } from '@/data/log'
 import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
 import { SaveMealSheet } from '@/components/SaveMealSheet'
+import { AiLogSheet } from '@/components/AiLogSheet'
 import { usePrefs } from '@/lib/prefs'
 import { toKg, formatWeight } from '@/lib/units'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
@@ -22,6 +23,7 @@ export function Today() {
   const [foodSheet, setFoodSheet] = useState<MealSlot | null>(null)
   const [quickSheet, setQuickSheet] = useState<MealSlot | null>(null)
   const [saveSlot, setSaveSlot] = useState<MealSlot | null>(null)
+  const [aiOpen, setAiOpen] = useState(false)
 
   function yesterdayISO() {
     const d = new Date(today + 'T00:00:00')
@@ -46,6 +48,7 @@ export function Today() {
         target={target}
         onQuickAdd={() => setQuickSheet('snack')}
         onCopyYesterday={() => void copyDay(yesterdayISO(), today)}
+        onAiLog={() => setAiOpen(true)}
       />
 
       {MEAL_SLOTS.map((slot) => {
@@ -111,7 +114,21 @@ export function Today() {
         entries={entries.filter((e) => e.meal_slot === saveSlot)}
         defaultName={saveSlot ? `My ${saveSlot}` : 'Saved meal'}
       />
+      <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={today} />
     </div>
+  )
+}
+
+function IconBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-border)] text-muted hover:text-[var(--color-text)]"
+    >
+      {children}
+    </button>
   )
 }
 
@@ -120,11 +137,13 @@ function DayDashboard({
   target,
   onQuickAdd,
   onCopyYesterday,
+  onAiLog,
 }: {
   totals: Nutrients
   target: TargetRow | undefined
   onQuickAdd: () => void
   onCopyYesterday: () => void
+  onAiLog: () => void
 }) {
   const eaten = Math.round(totals.energy ?? 0)
 
@@ -132,20 +151,10 @@ function DayDashboard({
     <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Today</h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onCopyYesterday}
-            title="Copy yesterday's food into today"
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
-          >
-            <CopyPlus size={14} /> Copy
-          </button>
-          <button
-            onClick={onQuickAdd}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm"
-          >
-            <Zap size={14} /> Quick add
-          </button>
+        <div className="flex items-center gap-1.5">
+          <IconBtn onClick={onAiLog} title="Describe a meal in words"><Sparkles size={14} /></IconBtn>
+          <IconBtn onClick={onCopyYesterday} title="Copy yesterday's food into today"><CopyPlus size={14} /></IconBtn>
+          <IconBtn onClick={onQuickAdd} title="Quick add macros"><Zap size={14} /></IconBtn>
         </div>
       </div>
 
