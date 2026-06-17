@@ -12,7 +12,8 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "curated": "node scripts/build-curated-foods.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.0",
