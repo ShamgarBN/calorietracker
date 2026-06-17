@@ -19,8 +19,15 @@ export function ServingPicker({
   onLogged: () => void
   onBack: () => void
 }) {
-  const servings = food.servings.length ? food.servings : [{ label: '100 g', grams: 100 }]
-  const [idx, setIdx] = useState(Math.min(food.default_serving, servings.length - 1))
+  // The food's named servings, plus always-available direct units so you can enter
+  // any amount (e.g. 4 g of sugar) instead of being stuck with "100 g".
+  const baseServings = food.servings.length ? food.servings : [{ label: '100 g', grams: 100 }]
+  const servings = [
+    ...baseServings,
+    { label: 'gram (g)', grams: 1 },
+    { label: 'ounce (oz)', grams: 28.3495 },
+  ]
+  const [idx, setIdx] = useState(Math.min(food.default_serving, baseServings.length - 1))
   const [qty, setQty] = useState('1')
   const [slot, setSlot] = useState<MealSlot>(mealSlot)
   const [saving, setSaving] = useState(false)

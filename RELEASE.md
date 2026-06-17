@@ -5,6 +5,13 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.0.1 — Custom serving units
+
+- The serving picker now always offers **gram (g)** and **ounce (oz)** alongside a food's named
+  servings, so you can log any amount (e.g. 4 g of sugar in coffee) instead of being limited to "100 g".
+
+---
+
 ## v1.0.0 — Phase 6: Data ownership, QoL & ship
 
 Feature-complete v1, deployed to GitHub Pages.
