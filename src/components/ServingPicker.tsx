@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { logFood } from '@/data/log'
 import { scaleNutrients } from '@/lib/nutrients'
+import { usePrefs } from '@/lib/prefs'
+import { massUnit, localizeServingLabel, formatMass } from '@/lib/units'
 import { MEAL_SLOTS, MealSlotSelect } from './MealSlotSelect'
 import type { Food, MealSlot } from '@/types/db'
 
@@ -19,14 +21,11 @@ export function ServingPicker({
   onLogged: () => void
   onBack: () => void
 }) {
-  // The food's named servings, plus always-available direct units so you can enter
-  // any amount (e.g. 4 g of sugar) instead of being stuck with "100 g".
+  const system = usePrefs((s) => s.system)
+  // The food's named servings, plus a direct mass unit (oz in US, g in metric) so
+  // you can enter any amount (e.g. a little sugar) instead of being stuck with "100 g".
   const baseServings = food.servings.length ? food.servings : [{ label: '100 g', grams: 100 }]
-  const servings = [
-    ...baseServings,
-    { label: 'gram (g)', grams: 1 },
-    { label: 'ounce (oz)', grams: 28.3495 },
-  ]
+  const servings = [...baseServings, massUnit(system)]
   const [idx, setIdx] = useState(Math.min(food.default_serving, baseServings.length - 1))
   const [qty, setQty] = useState('1')
   const [slot, setSlot] = useState<MealSlot>(mealSlot)
@@ -76,7 +75,7 @@ export function ServingPicker({
           >
             {servings.map((s, i) => (
               <option key={i} value={i}>
-                {s.label}
+                {localizeServingLabel(s.label, system)}
               </option>
             ))}
           </select>
@@ -94,7 +93,7 @@ export function ServingPicker({
         <Stat label="C" value={Math.round(n.carbs ?? 0)} tone="text-[var(--color-carbs)]" />
         <Stat label="F" value={Math.round(n.fat ?? 0)} tone="text-[var(--color-fat)]" />
       </div>
-      <p className="-mt-2 text-center text-xs text-muted">{Math.round(grams)} g total</p>
+      <p className="-mt-2 text-center text-xs text-muted">{formatMass(grams, system)} total</p>
 
       <button
         onClick={add}

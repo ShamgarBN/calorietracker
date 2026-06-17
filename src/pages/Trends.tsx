@@ -8,7 +8,7 @@ import { db } from '@/lib/db'
 import { getCurrentTarget } from '@/data/targets'
 import { groupDailyTotals, buildSeries, currentStreak, adherenceRate, average } from '@/lib/analytics'
 import { usePrefs } from '@/lib/prefs'
-import { fromKg } from '@/lib/units'
+import { fromKg, weightUnitFor } from '@/lib/units'
 import { AdaptiveCard } from '@/components/AdaptiveCard'
 import { MicroReport } from '@/components/MicroReport'
 
@@ -19,7 +19,7 @@ const RANGES = [
 ]
 
 export function Trends() {
-  const unit = usePrefs((s) => s.weightUnit)
+  const unit = weightUnitFor(usePrefs((s) => s.system))
   const [range, setRange] = useState(14)
 
   const entries = useLiveQuery(() => db.log_entries.toArray(), [], [])

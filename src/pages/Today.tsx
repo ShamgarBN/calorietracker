@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles, Check, Droplet, Undo2 } from 'lucide-react'
+import { Plus, Zap, Trash2, BookmarkPlus, CopyPlus, Sparkles, Check, Droplet, Undo2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { db } from '@/lib/db'
 import { logWeight } from '@/data/weight'
 import { deleteEntry, dayTotals, copyDay } from '@/data/log'
@@ -13,7 +13,7 @@ import { todayISO } from '@/lib/util'
 import { SaveMealSheet } from '@/components/SaveMealSheet'
 import { AiLogSheet } from '@/components/AiLogSheet'
 import { usePrefs } from '@/lib/prefs'
-import { toKg, formatWeight } from '@/lib/units'
+import { toKg, formatWeight, formatMass, formatVolume, flozToMl, weightUnitFor } from '@/lib/units'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
 import { LogFoodSheet } from '@/components/LogFoodSheet'
 import { QuickAddSheet } from '@/components/QuickAddSheet'
@@ -21,36 +21,52 @@ import { ProgressRing, MacroBar } from '@/components/ProgressRing'
 import type { LogEntry, MealSlot, TargetRow } from '@/types/db'
 import type { Nutrients } from '@/lib/nutrients'
 
+const HISTORY_DAYS = 6 // how far back you can browse (today + 6 = 7 days)
+
+function shiftDate(date: string, delta: number): string {
+  const d = new Date(date + 'T00:00:00')
+  d.setDate(d.getDate() + delta)
+  return d.toISOString().slice(0, 10)
+}
+
 export function Today() {
   const today = todayISO()
+  const [date, setDate] = useState(today)
   const [foodSheet, setFoodSheet] = useState<MealSlot | null>(null)
   const [quickSheet, setQuickSheet] = useState<MealSlot | null>(null)
   const [saveSlot, setSaveSlot] = useState<MealSlot | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
 
-  function yesterdayISO() {
-    const d = new Date(today + 'T00:00:00')
-    d.setDate(d.getDate() - 1)
-    return d.toISOString().slice(0, 10)
-  }
+  const minDate = shiftDate(today, -HISTORY_DAYS)
+  const isToday = date === today
 
   const entries =
     useLiveQuery(
-      () => db.log_entries.where('date').equals(today).toArray(),
-      [today],
+      () => db.log_entries.where('date').equals(date).toArray(),
+      [date],
       [] as LogEntry[],
     ).filter((e) => !e.deleted) ?? []
 
   const totals = dayTotals(entries)
-  const target = useLiveQuery(() => getCurrentTarget(today), [today])
+  const target = useLiveQuery(() => getCurrentTarget(date), [date])
 
   return (
     <div className="space-y-6">
+      <DayNav
+        date={date}
+        isToday={isToday}
+        canPrev={date > minDate}
+        onPrev={() => setDate((d) => shiftDate(d, -1))}
+        onNext={() => setDate((d) => shiftDate(d, 1))}
+        onToday={() => setDate(today)}
+      />
+
       <DayDashboard
         totals={totals}
         target={target}
+        isToday={isToday}
         onQuickAdd={() => setQuickSheet('snack')}
-        onCopyYesterday={() => void copyDay(yesterdayISO(), today)}
+        onCopyYesterday={() => void copyDay(shiftDate(date, -1), date)}
         onAiLog={() => setAiOpen(true)}
       />
 
@@ -109,21 +125,21 @@ export function Today() {
         )
       })}
 
-      <WaterCard date={today} />
-      <NotesCard date={today} />
+      <WaterCard date={date} />
+      <NotesCard date={date} />
       <WeighInCard />
 
       <LogFoodSheet
         open={foodSheet !== null}
         onClose={() => setFoodSheet(null)}
         mealSlot={foodSheet ?? 'snack'}
-        date={today}
+        date={date}
       />
       <QuickAddSheet
         open={quickSheet !== null}
         onClose={() => setQuickSheet(null)}
         mealSlot={quickSheet ?? 'snack'}
-        date={today}
+        date={date}
       />
       <SaveMealSheet
         open={saveSlot !== null}
@@ -131,12 +147,14 @@ export function Today() {
         entries={entries.filter((e) => e.meal_slot === saveSlot && e.source === 'logged')}
         defaultName={saveSlot ? `My ${saveSlot}` : 'Saved meal'}
       />
-      <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={today} />
+      <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={date} />
     </div>
   )
 }
 
 function WaterCard({ date }: { date: string }) {
+  const system = usePrefs((s) => s.system)
+  const imperial = system === 'imperial'
   const total =
     useLiveQuery(
       async () => {
@@ -146,7 +164,12 @@ function WaterCard({ date }: { date: string }) {
       [date],
       0,
     ) ?? 0
-  const goal = 3000
+  const goal = 3000 // ml (~100 fl oz)
+  // Increment buttons, in the active system (values stored as ml).
+  const incs = imperial
+    ? [{ label: '+8 oz', ml: flozToMl(8) }, { label: '+16 oz', ml: flozToMl(16) }]
+    : [{ label: '+250 ml', ml: 250 }, { label: '+500 ml', ml: 500 }]
+
   return (
     <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="mb-2 flex items-center justify-between">
@@ -154,19 +177,18 @@ function WaterCard({ date }: { date: string }) {
           <Droplet size={15} className="text-[var(--color-fat)]" /> Water
         </h3>
         <span className="text-xs text-muted">
-          {total} / {goal} ml
+          {formatVolume(total, system)} / {formatVolume(goal, system)}
         </span>
       </div>
       <div className="mb-2 h-2 overflow-hidden rounded-full bg-[var(--color-surface-2)]">
         <div className="h-full rounded-full bg-[var(--color-fat)]" style={{ width: `${Math.min(total / goal, 1) * 100}%` }} />
       </div>
       <div className="flex gap-2">
-        <button onClick={() => void addWater(250, date)} className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-sm">
-          +250 ml
-        </button>
-        <button onClick={() => void addWater(500, date)} className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-sm">
-          +500 ml
-        </button>
+        {incs.map((inc) => (
+          <button key={inc.label} onClick={() => void addWater(inc.ml, date)} className="flex-1 rounded-lg border border-[var(--color-border)] py-1.5 text-sm">
+            {inc.label}
+          </button>
+        ))}
         <button onClick={() => void undoWater(date)} aria-label="Undo last water" className="rounded-lg border border-[var(--color-border)] px-3 text-muted">
           <Undo2 size={15} />
         </button>
@@ -206,12 +228,13 @@ function NotesCard({ date }: { date: string }) {
 }
 
 function PlannedRow({ entry }: { entry: LogEntry }) {
+  const system = usePrefs((s) => s.system)
   return (
     <li className="flex items-center justify-between gap-2 px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-sm text-muted">{entry.description}</p>
         <p className="truncate text-xs text-muted">
-          planned · {entry.grams > 0 ? `${Math.round(entry.grams)} g · ` : ''}
+          planned · {entry.grams > 0 ? `${formatMass(entry.grams, system)} · ` : ''}
           {Math.round(entry.nutrients.energy ?? 0)} kcal
         </p>
       </div>
@@ -247,15 +270,51 @@ function IconBtn({ onClick, title, children }: { onClick: () => void; title: str
   )
 }
 
+function DayNav({
+  date,
+  isToday,
+  canPrev,
+  onPrev,
+  onNext,
+  onToday,
+}: {
+  date: string
+  isToday: boolean
+  canPrev: boolean
+  onPrev: () => void
+  onNext: () => void
+  onToday: () => void
+}) {
+  const label = isToday
+    ? 'Today'
+    : new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+  return (
+    <div className="flex items-center justify-between">
+      <button onClick={onPrev} disabled={!canPrev} aria-label="Previous day" className="rounded-lg p-1.5 text-muted disabled:opacity-25">
+        <ChevronLeft size={20} />
+      </button>
+      <button onClick={onToday} className="text-base font-semibold" aria-label={isToday ? 'Today' : `${label} — tap for today`}>
+        {label}
+        {!isToday && <span className="ml-2 text-xs font-normal text-[var(--color-brand)]">→ Today</span>}
+      </button>
+      <button onClick={onNext} disabled={isToday} aria-label="Next day" className="rounded-lg p-1.5 text-muted disabled:opacity-25">
+        <ChevronRight size={20} />
+      </button>
+    </div>
+  )
+}
+
 function DayDashboard({
   totals,
   target,
+  isToday,
   onQuickAdd,
   onCopyYesterday,
   onAiLog,
 }: {
   totals: Nutrients
   target: TargetRow | undefined
+  isToday: boolean
   onQuickAdd: () => void
   onCopyYesterday: () => void
   onAiLog: () => void
@@ -265,10 +324,10 @@ function DayDashboard({
   return (
     <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">Today</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted">{isToday ? 'Today' : 'Summary'}</h2>
         <div className="flex items-center gap-1.5">
           <IconBtn onClick={onAiLog} title="Describe a meal in words"><Sparkles size={14} /></IconBtn>
-          <IconBtn onClick={onCopyYesterday} title="Copy yesterday's food into today"><CopyPlus size={14} /></IconBtn>
+          <IconBtn onClick={onCopyYesterday} title="Copy the previous day's food into this day"><CopyPlus size={14} /></IconBtn>
           <IconBtn onClick={onQuickAdd} title="Quick add macros"><Zap size={14} /></IconBtn>
         </div>
       </div>
@@ -307,12 +366,13 @@ function DayDashboard({
 }
 
 function EntryRow({ entry }: { entry: LogEntry }) {
+  const system = usePrefs((s) => s.system)
   return (
     <li className="flex items-center justify-between gap-2 px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-sm">{entry.description}</p>
         <p className="truncate text-xs text-muted">
-          {entry.grams > 0 ? `${Math.round(entry.grams)} g · ` : ''}
+          {entry.grams > 0 ? `${formatMass(entry.grams, system)} · ` : ''}
           {Math.round(entry.nutrients.protein ?? 0)}P · {Math.round(entry.nutrients.carbs ?? 0)}C ·{' '}
           {Math.round(entry.nutrients.fat ?? 0)}F
         </p>
@@ -332,7 +392,7 @@ function EntryRow({ entry }: { entry: LogEntry }) {
 }
 
 function WeighInCard() {
-  const unit = usePrefs((s) => s.weightUnit)
+  const unit = weightUnitFor(usePrefs((s) => s.system))
   const [value, setValue] = useState('')
   const latest = useLiveQuery(
     () => db.weight_entries.orderBy('date').filter((w) => !w.deleted).last(),

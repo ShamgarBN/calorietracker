@@ -6,7 +6,7 @@ import { getProfile, updateProfile } from '@/data/profile'
 import { saveTarget } from '@/data/targets'
 import { computeTargets } from '@/lib/targets'
 import { usePrefs } from '@/lib/prefs'
-import { fromKg, toKg } from '@/lib/units'
+import { fromKg, toKg, weightUnitFor } from '@/lib/units'
 import type { Profile, Sex } from '@/types/db'
 
 const ACTIVITY_OPTS: { value: Profile['activity_level']; label: string }[] = [
@@ -18,8 +18,9 @@ const ACTIVITY_OPTS: { value: Profile['activity_level']; label: string }[] = [
 ]
 
 export function GoalSetup({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const unit = usePrefs((s) => s.weightUnit)
-  const imperial = unit === 'lb'
+  const system = usePrefs((s) => s.system)
+  const imperial = system === 'imperial'
+  const unit = weightUnitFor(system)
   const latestWeight = useLiveQuery(
     () => db.weight_entries.orderBy('date').filter((w) => !w.deleted).last(),
     [],

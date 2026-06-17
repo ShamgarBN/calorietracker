@@ -4,13 +4,12 @@ import { supabase } from '@/lib/supabase'
 import { storageEstimate } from '@/lib/storage'
 import { useSyncStore } from '@/lib/sync'
 import { usePrefs } from '@/lib/prefs'
-import type { WeightUnit } from '@/lib/units'
 import { GoalSetup } from '@/components/GoalSetup'
 import { exportAllJson, exportLogCsv, importJson, download } from '@/data/exportImport'
 
 export function Settings() {
   const { pending, lastSyncedAt } = useSyncStore()
-  const { weightUnit, setWeightUnit } = usePrefs()
+  const { system, setSystem } = usePrefs()
   const [email, setEmail] = useState<string | null>(null)
   const [storage, setStorage] = useState<string>('—')
   const [goalsOpen, setGoalsOpen] = useState(false)
@@ -40,25 +39,28 @@ export function Settings() {
 
       <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm">Weight unit</span>
+          <span className="text-sm">Units</span>
           <div
             role="radiogroup"
-            aria-label="Weight unit"
+            aria-label="Unit system"
             className="flex overflow-hidden rounded-lg border border-[var(--color-border)]"
           >
-            {(['kg', 'lb'] as WeightUnit[]).map((u) => (
+            {([
+              { value: 'imperial', label: 'US (lb, oz)' },
+              { value: 'metric', label: 'Metric' },
+            ] as const).map((o) => (
               <button
-                key={u}
+                key={o.value}
                 role="radio"
-                aria-checked={weightUnit === u}
-                onClick={() => setWeightUnit(u)}
+                aria-checked={system === o.value}
+                onClick={() => setSystem(o.value)}
                 className={`px-4 py-1.5 text-sm ${
-                  weightUnit === u
+                  system === o.value
                     ? 'bg-[var(--color-brand)] font-medium text-black'
                     : 'text-muted hover:text-[var(--color-text)]'
                 }`}
               >
-                {u}
+                {o.label}
               </button>
             ))}
           </div>

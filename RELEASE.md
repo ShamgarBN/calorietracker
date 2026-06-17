@@ -5,6 +5,16 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.1.0 — US Imperial units + day history
+
+- **US Imperial throughout** (now the default): pounds for body weight, **ounces** for food amounts,
+  **fluid ounces** for water (8 / 16 oz quick-adds), feet/inches for height. Switch to Metric anytime in
+  Settings → Units. (Macros stay in grams — that's how US nutrition labels read; calories are unit-neutral.)
+- **Home** (renamed from "Today") now has a **day navigator** — step back up to 7 days to view or
+  back-fill a previous day's log, water, and notes; tap the date to jump back to today.
+
+---
+
 ## v1.0.4 — Fix: food logs / weights / water never synced
 
 **Critical sync fix.** `log_entries`, `weight_entries`, and `water_entries` are uniquely keyed by

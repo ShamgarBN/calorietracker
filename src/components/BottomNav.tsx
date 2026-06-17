@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Home, LineChart, CalendarDays, Settings } from 'lucide-react'
 
 const tabs = [
-  { to: '/', label: 'Today', Icon: Home, end: true },
+  { to: '/', label: 'Home', Icon: Home, end: true },
   { to: '/trends', label: 'Trends', Icon: LineChart, end: false },
   { to: '/plan', label: 'Plan', Icon: CalendarDays, end: false },
   { to: '/settings', label: 'Settings', Icon: Settings, end: false },
