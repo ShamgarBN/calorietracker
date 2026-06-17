@@ -1,6 +1,6 @@
 {
   "name": "calorie-tracker",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "type": "module",
   "description": "Personal nutrition & calorie tracker + meal planner. PWA backed by Supabase.",

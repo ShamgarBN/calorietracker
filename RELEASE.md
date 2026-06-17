@@ -5,6 +5,16 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.0.4 — Fix: food logs / weights / water never synced
+
+**Critical sync fix.** `log_entries`, `weight_entries`, and `water_entries` are uniquely keyed by
+`(user_id, client_uuid)`, but the sync layer used `client_uuid` alone as the upsert conflict target —
+so every one of those upserts failed with Postgres 42P10 and the rows lived only in each device's
+local cache (never reaching Supabase, never reaching other devices). Conflict targets now match the
+real composite constraints. Combined with v1.0.3's non-blocking flush, queued logs/weights now sync.
+
+---
+
 ## v1.0.3 — Sync robustness
 
 - A failing queued write no longer blocks the whole outbox — items are skipped and retried

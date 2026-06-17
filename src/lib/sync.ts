@@ -17,15 +17,18 @@ import { env } from './env'
 // ---------------------------------------------------------------------------
 
 /** Tables we sync, and the column used to resolve upsert conflicts. */
+// Must match each table's real unique constraint. log/weight/water are uniquely
+// keyed by (user_id, client_uuid) — NOT client_uuid alone, or the upsert errors
+// 42P10 "no unique constraint matching the ON CONFLICT specification".
 const CONFLICT_TARGET: Record<string, string> = {
-  log_entries: 'client_uuid',
-  weight_entries: 'client_uuid',
+  log_entries: 'user_id,client_uuid',
+  weight_entries: 'user_id,client_uuid',
+  water_entries: 'user_id,client_uuid',
   foods: 'id',
   targets: 'id',
   tdee_estimates: 'id',
   meals: 'id',
   recipes: 'id',
-  water_entries: 'client_uuid',
   day_notes: 'user_id,date',
   profile: 'user_id',
 }
