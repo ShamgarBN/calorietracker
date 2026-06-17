@@ -16,6 +16,11 @@ export function SyncStatus() {
   } else if (syncing) {
     icon = <RefreshCw size={14} className="animate-spin" />
     label = 'Syncing…'
+  } else if (lastError && pending > 0) {
+    // Stuck: items queued AND the last flush errored. Surface it (tap to see why).
+    icon = <AlertTriangle size={14} />
+    label = `${pending} stuck`
+    tone = 'text-[var(--color-warn)]'
   } else if (pending > 0) {
     icon = <RefreshCw size={14} />
     label = `${pending} to sync`
@@ -26,9 +31,18 @@ export function SyncStatus() {
     tone = 'text-[var(--color-warn)]'
   }
 
+  function onTap() {
+    // On mobile there's no hover — tapping a stuck/errored chip shows the reason.
+    if (lastError && (pending > 0 || !syncing)) {
+      // eslint-disable-next-line no-alert
+      alert(`Sync issue:\n${lastError}\n\nTap OK to retry.`)
+    }
+    void syncNow()
+  }
+
   return (
     <button
-      onClick={() => void syncNow()}
+      onClick={onTap}
       title={lastError ?? 'Tap to sync now'}
       className={`inline-flex items-center gap-1.5 text-xs ${tone} hover:opacity-80`}
       aria-label={`Sync status: ${label}. Tap to sync now.`}

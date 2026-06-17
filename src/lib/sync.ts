@@ -97,12 +97,17 @@ export async function queueMutation(args: {
 
 let flushing = false
 
-/** Push queued mutations to Supabase, oldest first. Stops at the first hard failure. */
+/**
+ * Push queued mutations to Supabase, oldest first. A failing item is SKIPPED (not
+ * fatal) so one bad write can't block the rest of the queue — it stays queued and
+ * retries on the next flush. The last error is surfaced for visibility.
+ */
 export async function flushOutbox(): Promise<void> {
   if (flushing) return
   if (!s().online || !(await hasSession())) return
   flushing = true
-  s().set({ syncing: true, lastError: null })
+  s().set({ syncing: true })
+  let lastError: string | null = null
   try {
     const items = await db.outbox.orderBy('id').toArray()
     for (const item of items) {
@@ -120,17 +125,16 @@ export async function flushOutbox(): Promise<void> {
         }
         if (item.id != null) await db.outbox.delete(item.id)
       } catch (err) {
-        // Leave this item (and the rest) queued; record the error and retry later.
+        // Record the error and move on — don't let it stall everything behind it.
         const msg = err instanceof Error ? err.message : String(err)
+        lastError = `${item.table}: ${msg}`
         if (item.id != null) {
           await db.outbox.update(item.id, { tries: item.tries + 1, last_error: msg })
         }
-        s().set({ lastError: msg })
-        break
       }
     }
     await refreshPending()
-    s().set({ lastSyncedAt: Date.now() })
+    s().set({ lastSyncedAt: Date.now(), lastError })
   } finally {
     flushing = false
     s().set({ syncing: false })
@@ -189,6 +193,12 @@ export function startSyncEngine(): void {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') void syncNow()
   })
+
+  // Gentle periodic retry while the tab is visible — catches a stuck outbox and
+  // pulls cross-device changes without depending on background sync (iOS has none).
+  setInterval(() => {
+    if (document.visibilityState === 'visible') void syncNow()
+  }, 30_000)
 
   // Kick an initial sync shortly after boot (auth/session may still be resolving).
   setTimeout(() => void syncNow(), 800)

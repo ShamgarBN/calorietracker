@@ -5,6 +5,24 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.0.3 — Sync robustness
+
+- A failing queued write no longer blocks the whole outbox — items are skipped and retried
+  individually, so one bad row can't stall everything behind it.
+- Added a 30s periodic sync retry while the app is open (catches a stuck queue + pulls cross-device
+  changes), on top of sync-on-change / open / foreground.
+- The sync chip now shows "N stuck" and, when tapped, reveals the actual error — so a sync problem is
+  visible instead of silently piling up.
+
+---
+
+## v1.0.2 — Email + password sign-in
+
+- Added email + password sign-in (default on the login screen; magic link kept as a fallback) and a
+  "Set password" option in Settings, removing the dependence on rate-limited emailed magic links.
+
+---
+
 ## v1.0.1 — Custom serving units
 
 - The serving picker now always offers **gram (g)** and **ounce (oz)** alongside a food's named
