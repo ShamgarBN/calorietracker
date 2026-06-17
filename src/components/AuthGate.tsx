@@ -49,9 +49,30 @@ function SetupScreen() {
 }
 
 function LoginScreen() {
+  const [mode, setMode] = useState<'password' | 'magic'>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const [error, setError] = useState('')
+
+  const input =
+    'w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 outline-none focus:border-[var(--color-brand)]'
+
+  async function signInPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setStatus('sending')
+    setError('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError(
+        error.message.toLowerCase().includes('invalid')
+          ? 'Wrong email or password. If you’ve never set a password, sign in with a magic link first, then set one in Settings.'
+          : error.message,
+      )
+      setStatus('error')
+    }
+    // On success the auth listener swaps the screen.
+  }
 
   async function sendLink(e: React.FormEvent) {
     e.preventDefault()
@@ -80,29 +101,28 @@ function LoginScreen() {
         <p className="text-sm text-[var(--color-brand)]">
           Check your email for a magic link. Open it on this device to finish signing in.
         </p>
+      ) : mode === 'password' ? (
+        <form onSubmit={signInPassword} className="space-y-3">
+          <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={input} aria-label="Email" />
+          <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className={input} aria-label="Password" />
+          <button type="submit" disabled={status === 'sending'} className="w-full rounded-lg bg-[var(--color-brand)] px-3 py-2 font-medium text-black disabled:opacity-60">
+            {status === 'sending' ? 'Signing in…' : 'Sign in'}
+          </button>
+          {status === 'error' && <p className="text-sm text-[var(--color-warn)]">{error}</p>}
+          <button type="button" onClick={() => { setMode('magic'); setStatus('idle'); setError('') }} className="w-full text-center text-xs text-muted hover:text-[var(--color-text)]">
+            Email me a magic link instead
+          </button>
+        </form>
       ) : (
         <form onSubmit={sendLink} className="space-y-3">
-          <label className="block text-sm" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 outline-none focus:border-[var(--color-brand)]"
-          />
-          <button
-            type="submit"
-            disabled={status === 'sending'}
-            className="w-full rounded-lg bg-[var(--color-brand)] px-3 py-2 font-medium text-black disabled:opacity-60"
-          >
+          <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" className={input} aria-label="Email" />
+          <button type="submit" disabled={status === 'sending'} className="w-full rounded-lg bg-[var(--color-brand)] px-3 py-2 font-medium text-black disabled:opacity-60">
             {status === 'sending' ? 'Sending…' : 'Send magic link'}
           </button>
           {status === 'error' && <p className="text-sm text-[var(--color-warn)]">{error}</p>}
+          <button type="button" onClick={() => { setMode('password'); setStatus('idle'); setError('') }} className="w-full text-center text-xs text-muted hover:text-[var(--color-text)]">
+            Sign in with a password instead
+          </button>
         </form>
       )}
     </Card>

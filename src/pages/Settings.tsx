@@ -75,6 +75,8 @@ export function Settings() {
         <Row label="Local storage" value={storage} />
       </section>
 
+      <SetPasswordSection />
+
       <DataSection />
 
       <button
@@ -88,6 +90,53 @@ export function Settings() {
         Goals, units, dietary preferences, and data export land in Phases 2 & 6.
       </p>
     </div>
+  )
+}
+
+function SetPasswordSection() {
+  const [password, setPassword] = useState('')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle')
+  const [error, setError] = useState('')
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault()
+    if (password.length < 6) {
+      setError('Use at least 6 characters.')
+      setStatus('error')
+      return
+    }
+    setStatus('saving')
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) {
+      setError(error.message)
+      setStatus('error')
+    } else {
+      setStatus('done')
+      setPassword('')
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <h3 className="mb-1 text-sm font-medium">Password</h3>
+      <p className="mb-3 text-xs text-muted">Set a password to sign in without emailed magic links.</p>
+      <form onSubmit={save} className="flex gap-2">
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="New password"
+          aria-label="New password"
+          className="flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--color-brand)]"
+        />
+        <button type="submit" disabled={status === 'saving'} className="rounded-lg bg-[var(--color-brand)] px-4 py-2 text-sm font-medium text-black disabled:opacity-60">
+          {status === 'saving' ? 'Saving…' : 'Set'}
+        </button>
+      </form>
+      {status === 'done' && <p className="mt-2 text-xs text-[var(--color-brand)]">Password set. You can now sign in with it.</p>}
+      {status === 'error' && <p className="mt-2 text-xs text-[var(--color-warn)]">{error}</p>}
+    </section>
   )
 }
 
