@@ -1,23 +1,26 @@
 import { useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
-import { logFood } from '@/data/log'
+import { logFood, updateEntry } from '@/data/log'
 import { scaleNutrients } from '@/lib/nutrients'
 import { usePrefs } from '@/lib/prefs'
 import { massUnit, localizeServingLabel, formatMass } from '@/lib/units'
 import { MEAL_SLOTS, MealSlotSelect } from './MealSlotSelect'
-import type { Food, MealSlot } from '@/types/db'
+import type { Food, LogEntry, MealSlot } from '@/types/db'
 
 // Stage 2 of logging: choose serving + quantity, see resolved macros, log it.
+// When `existing` is passed, the picker edits that entry instead of creating one.
 export function ServingPicker({
   food,
   mealSlot,
   date,
+  existing,
   onLogged,
   onBack,
 }: {
   food: Food
   mealSlot: MealSlot
   date: string
+  existing?: LogEntry
   onLogged: () => void
   onBack: () => void
 }) {
@@ -26,9 +29,12 @@ export function ServingPicker({
   // you can enter any amount (e.g. a little sugar) instead of being stuck with "100 g".
   const baseServings = food.servings.length ? food.servings : [{ label: '100 g', grams: 100 }]
   const servings = [...baseServings, massUnit(system)]
-  const [idx, setIdx] = useState(Math.min(food.default_serving, baseServings.length - 1))
-  const [qty, setQty] = useState('1')
-  const [slot, setSlot] = useState<MealSlot>(mealSlot)
+  const initialIdx = existing
+    ? Math.max(0, servings.findIndex((s) => s.label === existing.unit))
+    : Math.min(food.default_serving, baseServings.length - 1)
+  const [idx, setIdx] = useState(initialIdx < 0 ? 0 : initialIdx)
+  const [qty, setQty] = useState(existing ? String(existing.quantity) : '1')
+  const [slot, setSlot] = useState<MealSlot>(existing?.meal_slot ?? mealSlot)
   const [saving, setSaving] = useState(false)
 
   const quantity = parseFloat(qty) || 0
@@ -38,14 +44,25 @@ export function ServingPicker({
   async function add() {
     if (grams <= 0) return
     setSaving(true)
-    await logFood({ food, grams, mealSlot: slot, date, unitLabel: servings[idx].label, quantity })
+    if (existing) {
+      await updateEntry({
+        ...existing,
+        meal_slot: slot,
+        quantity,
+        unit: servings[idx].label,
+        grams,
+        nutrients: n,
+      })
+    } else {
+      await logFood({ food, grams, mealSlot: slot, date, unitLabel: servings[idx].label, quantity })
+    }
     onLogged()
   }
 
   return (
     <div className="space-y-4">
       <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted">
-        <ChevronLeft size={16} /> Back to search
+        <ChevronLeft size={16} /> {existing ? 'Cancel' : 'Back to search'}
       </button>
 
       <div>
@@ -100,7 +117,7 @@ export function ServingPicker({
         disabled={saving || grams <= 0}
         className="w-full rounded-lg bg-[var(--color-brand)] px-3 py-2.5 font-medium text-black disabled:opacity-60"
       >
-        Add to {MEAL_SLOTS.find((s) => s.value === slot)?.label}
+        {existing ? 'Save changes' : `Add to ${MEAL_SLOTS.find((s) => s.value === slot)?.label}`}
       </button>
     </div>
   )

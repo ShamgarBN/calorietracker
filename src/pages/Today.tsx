@@ -12,6 +12,7 @@ import { getCurrentTarget } from '@/data/targets'
 import { todayISO } from '@/lib/util'
 import { SaveMealSheet } from '@/components/SaveMealSheet'
 import { AiLogSheet } from '@/components/AiLogSheet'
+import { EditEntrySheet } from '@/components/EditEntrySheet'
 import { usePrefs } from '@/lib/prefs'
 import { toKg, formatWeight, formatMass, formatVolume, flozToMl, weightUnitFor } from '@/lib/units'
 import { MEAL_SLOTS } from '@/components/MealSlotSelect'
@@ -36,6 +37,7 @@ export function Today() {
   const [quickSheet, setQuickSheet] = useState<MealSlot | null>(null)
   const [saveSlot, setSaveSlot] = useState<MealSlot | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
+  const [editEntry, setEditEntry] = useState<LogEntry | null>(null)
 
   const minDate = shiftDate(today, -HISTORY_DAYS)
   const isToday = date === today
@@ -108,7 +110,7 @@ export function Today() {
                 {slotLogged.length > 0 && (
                   <ul className="divide-y divide-[var(--color-border)] rounded-xl border border-[var(--color-border)]">
                     {slotLogged.map((e) => (
-                      <EntryRow key={e.client_uuid} entry={e} />
+                      <EntryRow key={e.client_uuid} entry={e} onEdit={setEditEntry} />
                     ))}
                   </ul>
                 )}
@@ -148,6 +150,7 @@ export function Today() {
         defaultName={saveSlot ? `My ${saveSlot}` : 'Saved meal'}
       />
       <AiLogSheet open={aiOpen} onClose={() => setAiOpen(false)} mealSlot="snack" date={date} />
+      <EditEntrySheet entry={editEntry} onClose={() => setEditEntry(null)} />
     </div>
   )
 }
@@ -365,18 +368,18 @@ function DayDashboard({
   )
 }
 
-function EntryRow({ entry }: { entry: LogEntry }) {
+function EntryRow({ entry, onEdit }: { entry: LogEntry; onEdit: (e: LogEntry) => void }) {
   const system = usePrefs((s) => s.system)
   return (
     <li className="flex items-center justify-between gap-2 px-3 py-2">
-      <div className="min-w-0">
+      <button onClick={() => onEdit(entry)} className="min-w-0 flex-1 text-left" aria-label={`Edit ${entry.description}`}>
         <p className="truncate text-sm">{entry.description}</p>
         <p className="truncate text-xs text-muted">
           {entry.grams > 0 ? `${formatMass(entry.grams, system)} · ` : ''}
           {Math.round(entry.nutrients.protein ?? 0)}P · {Math.round(entry.nutrients.carbs ?? 0)}C ·{' '}
           {Math.round(entry.nutrients.fat ?? 0)}F
         </p>
-      </div>
+      </button>
       <div className="flex shrink-0 items-center gap-3">
         <span className="text-sm tabular-nums">{Math.round(entry.nutrients.energy ?? 0)}</span>
         <button

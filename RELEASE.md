@@ -5,6 +5,17 @@ each phase is a runnable increment. Newest first.
 
 ---
 
+## v1.2.0 — Edit entries + combine foods
+
+- **Edit a logged entry**: tap any logged food on Home to change its serving/amount or meal (food
+  entries reuse the serving picker; quick-adds open a macro editor) — no more delete-and-redo.
+- **Combine foods into one library item**: after logging a few foods, the "Save these foods" sheet now
+  offers **"As one food"** — e.g. coffee + half & half + sugar → a single **"My Coffee"** in your
+  library that logs as one line and is searchable/favoritable. (The "As a meal" option, which logs each
+  item separately, is still there.)
+
+---
+
 ## v1.1.0 — US Imperial units + day history
 
 - **US Imperial throughout** (now the default): pounds for body weight, **ounces** for food amounts,

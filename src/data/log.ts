@@ -21,6 +21,11 @@ async function persistEntry(entry: LogEntry): Promise<void> {
   })
 }
 
+/** Update an existing log entry in place (same client_uuid → upsert overwrites). */
+export async function updateEntry(entry: LogEntry): Promise<void> {
+  await persistEntry({ ...entry, updated_at: nowISO() })
+}
+
 /** Log a food at a chosen serving. Nutrients are resolved + denormalized onto the entry. */
 export async function logFood(args: {
   food: Food

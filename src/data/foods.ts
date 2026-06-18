@@ -4,7 +4,7 @@ import { currentUserId } from '@/lib/supabase'
 import { uuid } from '@/lib/util'
 import type { Food, Serving } from '@/types/db'
 import type { FoodResult } from '@/types/food'
-import type { Nutrients } from '@/lib/nutrients'
+import { sumNutrients, type Nutrients } from '@/lib/nutrients'
 
 function nowISO() {
   return new Date().toISOString()
@@ -65,6 +65,26 @@ export async function createCustomFood(input: {
   }
   await persistFood(food)
   return food
+}
+
+/**
+ * Combine several components (each with absolute nutrients + grams) into ONE custom
+ * food whose single serving is the whole combo — e.g. coffee + half & half + sugar
+ * → a reusable "My Coffee" item in your library that logs as one line.
+ */
+export async function createComboFood(
+  name: string,
+  components: { nutrients: Nutrients; grams: number }[],
+): Promise<Food> {
+  const total = sumNutrients(components.map((c) => c.nutrients))
+  const totalGrams = Math.round(components.reduce((s, c) => s + (c.grams || 0), 0)) || 100
+  const per100g: Nutrients = {}
+  for (const [k, v] of Object.entries(total)) per100g[k as keyof Nutrients] = ((v as number) * 100) / totalGrams
+  return createCustomFood({
+    name,
+    nutrients: per100g,
+    servings: [{ label: `1 serving (${totalGrams} g)`, grams: totalGrams }],
+  })
 }
 
 export async function toggleFavorite(foodId: string): Promise<void> {
